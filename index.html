@@ -2080,7 +2080,7 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
             }
         }
 
-       // Функция расчета и рендеринга склонности к системной торговле за текущую неделю с учетом отката за ошибки
+      // Функция расчета и рендеринга склонности к системной торговле за текущую неделю
         function updateMonthlyStats() {
             const now = new Date();
             
@@ -2106,7 +2106,7 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
                 titleEl.innerText = `Склонность к системной торговле за эту неделю`;
             }
 
-            // Фильтруем и сортируем отчеты за текущую неделю от старых к новым (хронологически)
+            // Фильтруем и сортируем отчеты за текущую неделю от старых к новым
             const weekReports = reportsHistory
                 .filter(item => item.id >= weekStartTime)
                 .sort((a, b) => a.id - b.id);
@@ -2152,9 +2152,8 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
 
                 let cleanCount = 0;
                 let violationCount = 0;
-                let runningSteps = 0; // Шкала, которая растет от чистых дней и падает от ошибок
+                let runningSteps = 0;
 
-                // Уникальные дни для подсчета безошибочных дней и ошибок
                 let processedDays = new Set();
                 let cleanDaysSet = new Set();
                 let violationDaysSet = new Set();
@@ -2171,14 +2170,12 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
                     } else {
                         violationDaysSet.add(dayKey);
                         violationCount++;
-                        // Ошибка отнимает 1 шаг назад (но не ниже 0)
                         runningSteps = Math.max(0, runningSteps - 1);
                     }
                 });
 
                 cleanCount = cleanDaysSet.size;
 
-                // Если есть засчитанные выходные, добавляем шаг (если еще не уперлись в 6)
                 if (data.hasWeekend && runningSteps < 6) {
                     runningSteps++;
                 }
@@ -2187,13 +2184,12 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
                 const remainingSteps = 6 - filledSteps;
                 const percent = Math.round((filledSteps / 6) * 100);
 
-                // Если были ошибки, а текущие шаги меньше потенциально возможных чистых дней — шкала приобретает красноватый оттенок отката
                 const hasRebound = violationCount > 0 && filledSteps < cleanCount;
                 const barGradient = hasRebound
                     ? 'bg-gradient-to-r from-rose-500/80 via-amber-500 to-amber-400'
                     : (isPrimary ? 'bg-gradient-to-r from-emerald-500 to-amber-400' : 'bg-gradient-to-r from-emerald-500 to-blue-400');
 
-                // Динамическая смена фраз на плашке статуса
+                // Динамические надписи на плашке
                 let statusLabel = "";
                 let badgeClass = isPrimary 
                     ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" 
@@ -2216,29 +2212,26 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
                     badgeClass = "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30";
                 }
 
-                // Текст для строки "Безошибочные дни"
-                let cleanDaysText = "";
+                // Логика текста для строки "Безошибочные дни": число яркое, слово "дня/дней" серое
+                let cleanDaysHtml = "";
                 if (cleanCount === 0) {
-                    cleanDaysText = "Пока ни одного дня";
-                } else if (cleanCount >= 5) {
-                    cleanDaysText = `${cleanCount} ${cleanCount === 1 ? 'день' : (cleanCount >= 2 && cleanCount <= 4 ? 'дня' : 'дней')}`;
+                    cleanDaysHtml = `<span class="text-gray-400">Пока ни одного дня</span>`;
                 } else {
-                    cleanDaysText = `${cleanCount} ${cleanCount === 1 ? 'день' : 'дня'}`;
+                    const word = cleanCount === 1 ? 'день' : (cleanCount >= 2 && cleanCount <= 4 ? 'дня' : 'дней');
+                    cleanDaysHtml = `<span class="font-bold text-emerald-400">${cleanCount}</span> <span class="text-gray-400">${word}</span>`;
                 }
 
-                // Текст для строки "Дней с ошибками"
-                let errorsText = "";
-                let errorsClass = "font-bold text-emerald-400";
-
+                // Логика текста для строки "Дней с ошибками": серый фразовый текст, либо красная цифра + серое слово
+                let errorsHtml = "";
                 if (violationCount === 0) {
                     if (cleanCount >= 5) {
-                        errorsText = "Ни одного дня, отличный результат!";
+                        errorsHtml = `<span class="text-gray-400 font-normal">Ни одного дня, отличный результат!</span>`;
                     } else {
-                        errorsText = "Пока ни одного дня, отличный результат!";
+                        errorsHtml = `<span class="text-gray-400 font-normal">Пока ни одного дня, отличный результат!</span>`;
                     }
                 } else {
-                    errorsText = `${violationCount} ${violationCount === 1 ? 'день' : 'дня'}`;
-                    errorsClass = "font-bold text-rose-400";
+                    const word = violationCount === 1 ? 'день' : 'дня';
+                    errorsHtml = `<span class="font-bold text-rose-400">${violationCount}</span> <span class="text-gray-400">${word}</span>`;
                 }
 
                 const cardHtml = `
@@ -2254,20 +2247,20 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
                             <!-- Строка 1: Пройденные шаги -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Пройдено шагов за неделю:</span>
-                                <span class="font-bold ${hasRebound ? 'text-rose-400' : 'text-amber-400'}">${filledSteps} из 6 ${hasRebound ? '(откат -1)' : ''}</span>
+                                <span class="font-bold ${hasRebound ? 'text-rose-400' : 'text-amber-400'}">${filledSteps} <span class="text-gray-400 font-normal">из 6</span> ${hasRebound ? '<span class="text-rose-400 font-semibold">(откат -1)</span>' : ''}</span>
                             </div>
                             <!-- Строка 2: Безошибочные дни -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Безошибочные дни:</span>
-                                <span class="font-bold text-emerald-400">${cleanDaysText}</span>
+                                <div>${cleanDaysHtml}</div>
                             </div>
                             <!-- Строка 3: Дней с ошибками -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Дней с ошибками:</span>
-                                <span class="${errorsClass}">${errorsText}</span>
+                                <div>${errorsHtml}</div>
                             </div>
                         </div>
-                        <!-- Шкала прогресса с красноватым отливом при откате -->
+                        <!-- Шкала прогресса -->
                         <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
                             <div class="${barGradient} h-full transition-all duration-500" style="width: ${percent}%"></div>
                         </div>
