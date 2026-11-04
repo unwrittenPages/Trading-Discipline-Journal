@@ -1330,7 +1330,7 @@ const DB_NODE_NAME = 'reports_vladimir';
             }, 1000); 
         });
 
-       // Торговая сессия, проверка завершённости дня и логика 1-дневного Блока
+      // Торговая сессия, проверка завершённости дня и логика 1-дневного Блока
         function initSessionTimer() {
             const now = new Date();
             const dayOfWeek = now.getDay(); // 0 - ВС, 1 - ПН, ..., 5 - ПТ, 6 - СБ
@@ -1426,7 +1426,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                 }
             }
 
-            // 2. ПРОВЕРКА: Если отчёт за сегодня уже сдан
+            // 2. ПРОВЕРКА: Если отчёт за сегодня уже сдан (возвращаем плашку и цитату!)
             const todayStr = now.toDateString();
             const userTodayReport = reportsHistory.find(item => {
                 return new Date(item.id).toDateString() === todayStr && item.author === currentUser;
@@ -1454,12 +1454,12 @@ const DB_NODE_NAME = 'reports_vladimir';
                 const thoughtEl = document.getElementById('completed-spiritual-thought');
                 if (thoughtEl) {
                     if (isClean) {
-                        thoughtEl.innerHTML = `«Слава Богу за победу Духа над плотью! Кодекс соблюдён не силой нашей самоуверенной воли, а Его живой праведностью. Пусть это чистое стекло продолжает смиренно отражать свет Мастера».`;
+                        thoughtEl.innerHTML = `«Слава Богу за победу Духа над плотью! Кодекс соблюдён не силой нашей самоуверенной воли, а Его живой праведностью. Пусть это чистое стекло продолжает смиренно отражать свет Мастера, не приписывая себе заслуг».`;
                     } else {
                         thoughtEl.innerHTML = `
                             <div class="space-y-1">
                                 <p class="font-semibold text-rose-300">«Урок смирения за нарушение кодекса»</p>
-                                <p>Завтрашний день ты пропустишь, пока Брат будет торговать. Это сильное наказание нужно для того, чтобы укротить жадность и страх упущенной выгоды.</p>
+                                <p>Завтрашний день ты пропустишь, пока Брат будет торговать. Это сильное наказание нужно для того, чтобы укротить жадность и страх упущенной выгоды. Поразмышляй в тишине над ошибкой — Истина важнее комфорта.</p>
                             </div>
                         `;
                     }
@@ -1508,7 +1508,7 @@ const DB_NODE_NAME = 'reports_vladimir';
 
             // 4. Обычный рабочий день (Пн–Пт)
             if (totalCurrentSeconds < startSeconds) {
-                // До 09:00 утра — сессия еще не началась, форма ввода скрыта
+                // До 09:00 утра — показываем плашку таймера ожидания сессии
                 if (timerCard) timerCard.classList.remove('hidden');
                 if (wizardContainer) wizardContainer.classList.add('hidden');
                 if (completedCard) completedCard.classList.add('hidden');
@@ -1554,7 +1554,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                 const remTextEl = document.getElementById('session-remaining-text');
                 if (remTextEl) remTextEl.innerText = `осталось ${remHours} ч ${remMins} мин ${remSecs} сек`;
             } else {
-                // После 12:00 (после торговой сессии) — доступна форма ввода отчета
+                // После 12:00 (если отчёт за сегодня еще НЕ сдан) — открывается форма ввода
                 if (timerCard) timerCard.classList.add('hidden');
                 if (completedCard) completedCard.classList.add('hidden');
                 if (wizardContainer) wizardContainer.classList.remove('hidden');
