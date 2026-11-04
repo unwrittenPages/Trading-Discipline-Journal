@@ -2080,7 +2080,7 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
             }
         }
 
-        // Функция расчета и рендеринга склонности к системной торговле за текущую неделю (сброс в понедельник в 09:00)
+       // Функция расчета и рендеринга склонности к системной торговле за текущую неделю
         function updateMonthlyStats() {
             const now = new Date();
             
@@ -2088,12 +2088,10 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
             function getThisWeekMonday9AM(date) {
                 const d = new Date(date);
                 const day = d.getDay();
-                // Если воскресенье (0), то отнимаем 6 дней, иначе (day - 1)
                 const diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1);
                 const monday = new Date(d.setDate(diffToMonday));
                 monday.setHours(9, 0, 0, 0);
                 
-                // Если сейчас понедельник, но еще нет 9 утра, значит текущая недельная сессия началась в прошлый понедельник
                 if (date < monday) {
                     monday.setDate(monday.getDate() - 7);
                 }
@@ -2105,32 +2103,34 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
 
             const titleEl = document.getElementById('monthly-stats-title');
             if (titleEl) {
-                const options = { day: 'numeric', month: 'short' };
                 titleEl.innerText = `Склонность к системной торговле за эту неделю`;
             }
 
-            // Фильтруем отчеты за текущую неделю (начиная с понедельника 09:00)
+            // Фильтруем отчеты за текущую неделю
             const weekReports = reportsHistory.filter(item => item.id >= weekStartTime);
             
-            // Проверяем бэктесты за выходные (если загружен хотя бы 1 скрин и пройдены чекбоксы)
+            // Проверяем бэктесты за выходные (скриншот + пройденные чекбоксы)
             const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             const weekendBacktests = backtests.filter(item => item.id >= weekStartTime);
 
             let stats = {
-                'Vladimir': { count: 0, hasWeekend: false, activeDays: new Set() },
-                'Max': { count: 0, hasWeekend: false, activeDays: new Set() }
+                'Vladimir': { cleanDays: new Set(), violationDays: new Set(), hasWeekend: false },
+                'Max': { cleanDays: new Set(), violationDays: new Set(), hasWeekend: false }
             };
 
             weekReports.forEach(item => {
                 const author = item.author;
                 if (stats[author]) {
-                    // Учитываем только системные отчеты или уникальные дни
                     const dayKey = new Date(item.id).toDateString();
-                    stats[author].activeDays.add(dayKey);
+                    if (item.compliance === 'clean') {
+                        stats[author].cleanDays.add(dayKey);
+                    } else {
+                        stats[author].violationDays.add(dayKey);
+                    }
                 }
             });
 
-            // Проверяем бэктесты для выходных
+            // Проверяем условия выполнения бэктеста за выходные
             ['Vladimir', 'Max'].forEach(author => {
                 const userBk = weekendBacktests.filter(i => i.author === author);
                 const checklist = JSON.parse(localStorage.getItem(`weekend_checklist_${author}`) || '{}');
@@ -2156,14 +2156,18 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
                     ? 'bg-gradient-to-r from-emerald-500 to-amber-400' 
                     : 'bg-gradient-to-r from-emerald-500 to-blue-400';
 
-                // Считаем прогресс от 0 до 6
-                let filledSteps = data.activeDays.size;
+                const cleanCount = data.cleanDays.size;
+                const violationCount = data.violationDays.size;
+
+                // Считаем пройденные шаги (максимум 6)
+                let filledSteps = cleanCount;
                 if (data.hasWeekend) filledSteps++;
                 if (filledSteps > 6) filledSteps = 6;
 
+                const remainingSteps = 6 - filledSteps;
                 const percent = Math.round((filledSteps / 6) * 100);
 
-                // Динамические надписи по ходу изменения шкалы (от 0 до 6 шагов)
+                // Динамическая смена фраз на плашке статуса
                 let statusLabel = "";
                 let badgeClass = isPrimary 
                     ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" 
@@ -2186,6 +2190,31 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
                     badgeClass = "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30";
                 }
 
+                // Логика текста для строки "Безошибочные дни"
+                let cleanDaysText = "";
+                if (cleanCount === 0) {
+                    cleanDaysText = "Пока ни одного дня";
+                } else if (cleanCount >= 5) {
+                    cleanDaysText = `${cleanCount} ${cleanCount === 1 ? 'день' : (cleanCount >= 2 && cleanCount <= 4 ? 'дня' : 'дней')}`;
+                } else {
+                    cleanDaysText = `${cleanCount} ${cleanCount === 1 ? 'день' : 'дня'}`;
+                }
+
+                // Логика текста для строки "Дней с ошибками"
+                let errorsText = "";
+                let errorsClass = "font-bold text-emerald-400";
+
+                if (violationCount === 0) {
+                    if (cleanCount >= 5) {
+                        errorsText = "Ни одного дня, отличный результат!";
+                    } else {
+                        errorsText = "Пока ни одного дня, отличный результат!";
+                    }
+                } else {
+                    errorsText = `${violationCount} ${violationCount === 1 ? 'день' : 'дня'}`;
+                    errorsClass = "font-bold text-rose-400";
+                }
+
                 const cardHtml = `
                     <div class="glass-card p-4 rounded-xl border border-brand-border space-y-3">
                         <div class="flex items-center justify-between">
@@ -2196,16 +2225,23 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
                             <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${badgeClass}">${statusLabel} (${filledSteps}/6)</span>
                         </div>
                         <div class="space-y-1 text-xs text-gray-300">
+                            <!-- Строка 1: Пройденные шаги -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Пройдено шагов за неделю:</span>
                                 <span class="font-bold text-amber-400">${filledSteps} из 6</span>
                             </div>
+                            <!-- Строка 2: Безошибочные дни -->
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Отметка за выходные:</span>
-                                <span class="font-bold ${data.hasWeekend ? 'text-emerald-400' : 'text-gray-500'}">${data.hasWeekend ? 'Зачтено (Скрин + Чекбоксы)' : 'Ожидает бэктеста'}</span>
+                                <span class="text-gray-400">Безошибочные дни:</span>
+                                <span class="font-bold text-emerald-400">${cleanDaysText}</span>
+                            </div>
+                            <!-- Строка 3: Дни с ошибками -->
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Дней с ошибками:</span>
+                                <span class="${errorsClass}">${errorsText}</span>
                             </div>
                         </div>
-                        <!-- Progress bar -->
+                        <!-- Шкала прогресса -->
                         <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
                             <div class="${barGradient} h-full transition-all duration-500" style="width: ${percent}%"></div>
                         </div>
