@@ -1416,6 +1416,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                                 <p class="text-gray-400">Блок на 1 день убивает азарт и иллюзию контроля. Мы учимся радоваться успехам Брата больше, чем собственным процентам, осознавая полную немощь своего «я».</p>
                             </div>
                         `;
+                        thoughtEl.classList.remove('hidden');
                     }
 
                     const countdownTextEl = document.getElementById('next-session-countdown-text');
@@ -1426,10 +1427,15 @@ const DB_NODE_NAME = 'reports_vladimir';
                 }
             }
 
-            // 2. ПРОВЕРКА: Если отчёт за сегодня уже сдан (возвращаем плашку и цитату!)
-            const todayStr = now.toDateString();
+            // 2. ПРОВЕРКА: Если отчёт за сессию (сегодняшнюю или вчерашнюю ночную/утреннюю до 09:00) уже сдан
+            let targetCheckDate = new Date(now);
+            if (hours < 9) {
+                targetCheckDate.setDate(targetCheckDate.getDate() - 1);
+            }
+            const targetDateStr = targetCheckDate.toDateString();
+
             const userTodayReport = reportsHistory.find(item => {
-                return new Date(item.id).toDateString() === todayStr && item.author === currentUser;
+                return new Date(item.id).toDateString() === targetDateStr && item.author === currentUser;
             });
 
             if (userTodayReport) {
@@ -1439,7 +1445,14 @@ const DB_NODE_NAME = 'reports_vladimir';
 
                 const isClean = userTodayReport.compliance === 'clean';
                 const authorInfoEl = document.getElementById('completed-author-info');
-                if (authorInfoEl) authorInfoEl.innerText = `Запись зафиксирована (${userTodayReport.author})`;
+                
+                // Динамическая надпись: за сегодня или за вчера
+                const isYesterdayReport = hours < 9;
+                if (authorInfoEl) {
+                    authorInfoEl.innerText = isYesterdayReport 
+                        ? `Отчёт за вчера зафиксирован (${userTodayReport.author})` 
+                        : `Отчёт за сегодня зафиксирован (${userTodayReport.author})`;
+                }
                 
                 const badgeContainerEl = document.getElementById('completed-badge-container');
                 const badgeType = isClean ? 'clean' : 'blocked';
@@ -1451,6 +1464,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                     badgeContainerEl.dataset.badgeType = badgeType;
                 }
               
+                // Возвращаем духовную цитату
                 const thoughtEl = document.getElementById('completed-spiritual-thought');
                 if (thoughtEl) {
                     if (isClean) {
@@ -1463,6 +1477,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                             </div>
                         `;
                     }
+                    thoughtEl.classList.remove('hidden');
                 }
 
                 let targetDayName = "Завтра в 09:00";
@@ -1532,7 +1547,7 @@ const DB_NODE_NAME = 'reports_vladimir';
             } else if (totalCurrentSeconds >= startSeconds && totalCurrentSeconds < endSeconds && !isUnlockedToday) {
                 // Во время сессии (09:00 - 12:00)
                 if (timerCard) timerCard.classList.remove('hidden');
-                if (wizardContainer) timerCard.classList.add('hidden');
+                if (wizardContainer) wizardContainer.classList.add('hidden');
                 if (completedCard) completedCard.classList.add('hidden');
 
                 const badgeTextEl = document.getElementById('session-badge-text');
@@ -1554,7 +1569,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                 const remTextEl = document.getElementById('session-remaining-text');
                 if (remTextEl) remTextEl.innerText = `осталось ${remHours} ч ${remMins} мин ${remSecs} сек`;
             } else {
-                // После 12:00 (если отчёт за сегодня еще НЕ сдан) — открывается форма ввода
+                // После 12:00 (если отчёт за сессию еще НЕ сдан) — открывается форма ввода
                 if (timerCard) timerCard.classList.add('hidden');
                 if (completedCard) completedCard.classList.add('hidden');
                 if (wizardContainer) wizardContainer.classList.remove('hidden');
