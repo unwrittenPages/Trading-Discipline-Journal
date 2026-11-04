@@ -328,25 +328,25 @@
                 </button>
             </div>
         </section>
-
-        <!-- MONTHLY DISCIPLINE STATS CARD -->
+        
+<!-- WEEKLY DISCIPLINE STATS CARD -->
         <section class="glass-panel rounded-2xl p-6 border border-brand-border/80 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-brand-border/40 pb-3">
                 <h3 class="font-bold text-white text-base flex items-center space-x-2">
                     <i class="fa-solid fa-chart-pie text-amber-400"></i>
-                    <span id="monthly-stats-title">Склонность к системной торговле (Текущий месяц)</span>
+                    <span id="monthly-stats-title">Склонность к системной торговле за эту неделю</span>
                 </h3>
-                <span class="text-xs text-gray-400 font-medium">Индекс дисциплины</span>
+                <span class="text-xs text-gray-400 font-medium">Индекс дисциплины (макс. 6)</span>
             </div>
 
             <!-- Поясняющая мысль о логике шкалы -->
             <div class="p-3 rounded-xl bg-brand-dark/40 border border-brand-border/60 text-xs text-gray-300 leading-relaxed">
-                <span class="text-amber-400 font-semibold">Принцип шкалы:</span> 1 день по системе = +10% к шкале. Серия побед укрепляет индекс (до 100%). День внесистемности не сбрасывает шкалу в ноль, а мягко корректирует её на -30%, приучая разум к непрерывному учету ошибок без отчаяния.
+                <span class="text-amber-400 font-semibold">Принцип шкалы:</span> 5 торговых дней + 1 отметка за выходные (при загрузке бэктестов и прохождении чекбоксов). Всего 6 шагов к победе духа над хаосом.
             </div>
 
             <!-- Динамический контейнер карточек дисциплины -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="monthly-stats-grid">
-                <!-- Карточки подставляются автоматически в зависимости от currentUser -->
+                <!-- Карточки подставляются автоматически -->
             </div>
         </section>
 
@@ -2080,41 +2080,67 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
             }
         }
 
-        // Функция расчета и рендеринга статистики склонности к системной торговле за текущий месяц
+        // Функция расчета и рендеринга склонности к системной торговле за текущую неделю (сброс в понедельник в 09:00)
         function updateMonthlyStats() {
             const now = new Date();
-            const currentMonth = now.getMonth();
-            const currentYear = now.getFullYear();
+            
+            // Вычисляем начало текущей недели (Понедельник 09:00 утра)
+            function getThisWeekMonday9AM(date) {
+                const d = new Date(date);
+                const day = d.getDay();
+                // Если воскресенье (0), то отнимаем 6 дней, иначе (day - 1)
+                const diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1);
+                const monday = new Date(d.setDate(diffToMonday));
+                monday.setHours(9, 0, 0, 0);
+                
+                // Если сейчас понедельник, но еще нет 9 утра, значит текущая недельная сессия началась в прошлый понедельник
+                if (date < monday) {
+                    monday.setDate(monday.getDate() - 7);
+                }
+                return monday;
+            }
 
-            const monthsNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+            const weekStart = getThisWeekMonday9AM(now);
+            const weekStartTime = weekStart.getTime();
+
             const titleEl = document.getElementById('monthly-stats-title');
-            if (titleEl) titleEl.innerText = `Склонность к системной торговле (${monthsNames[currentMonth]} ${currentYear})`;
+            if (titleEl) {
+                const options = { day: 'numeric', month: 'short' };
+                titleEl.innerText = `Склонность к системной торговле за эту неделю`;
+            }
 
-            // Сортируем историю от старых к новым для правильного хронологического расчёта шкалы
-            const sortedReports = [...reportsHistory].sort((a, b) => a.id - b.id);
+            // Фильтруем отчеты за текущую неделю (начиная с понедельника 09:00)
+            const weekReports = reportsHistory.filter(item => item.id >= weekStartTime);
+            
+            // Проверяем бэктесты за выходные (если загружен хотя бы 1 скрин и пройдены чекбоксы)
+            const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+            const weekendBacktests = backtests.filter(item => item.id >= weekStartTime);
 
             let stats = {
-                'Vladimir': { clean: 0, violation: 0, score: 0 },
-                'Max': { clean: 0, violation: 0, score: 0 }
+                'Vladimir': { count: 0, hasWeekend: false, activeDays: new Set() },
+                'Max': { count: 0, hasWeekend: false, activeDays: new Set() }
             };
 
-            sortedReports.forEach(item => {
-                const itemDate = new Date(item.id);
-                if (itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear) {
-                    const author = item.author;
-                    if (stats[author]) {
-                        if (item.compliance === 'clean') {
-                            stats[author].clean++;
-                            stats[author].score = Math.min(100, stats[author].score + 10);
-                        } else {
-                            stats[author].violation++;
-                            stats[author].score = Math.max(0, Math.round(stats[author].score * 0.7));
-                        }
-                    }
+            weekReports.forEach(item => {
+                const author = item.author;
+                if (stats[author]) {
+                    // Учитываем только системные отчеты или уникальные дни
+                    const dayKey = new Date(item.id).toDateString();
+                    stats[author].activeDays.add(dayKey);
                 }
             });
 
-            // Кто сейчас залогинен — идет первым (жёлтый акцент), второй — синим акцентом
+            // Проверяем бэктесты для выходных
+            ['Vladimir', 'Max'].forEach(author => {
+                const userBk = weekendBacktests.filter(i => i.author === author);
+                const checklist = JSON.parse(localStorage.getItem(`weekend_checklist_${author}`) || '{}');
+                const isChecklistDone = checklist['chk_1'] || checklist['chk_2'] || checklist['chk_3'];
+                
+                if (userBk.length >= 1 && isChecklistDone) {
+                    stats[author].hasWeekend = true;
+                }
+            });
+
             const otherUser = currentUser === 'Vladimir' ? 'Max' : 'Vladimir';
             const orderedUsers = [currentUser, otherUser];
 
@@ -2124,32 +2150,40 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
 
             orderedUsers.forEach((name, index) => {
                 const data = stats[name];
-                const isPrimary = (index === 0); // Первый всегда текущий пользователь (желтый)
+                const isPrimary = (index === 0);
                 const iconColor = isPrimary ? 'text-amber-400' : 'text-blue-400';
                 const barGradient = isPrimary 
                     ? 'bg-gradient-to-r from-emerald-500 to-amber-400' 
                     : 'bg-gradient-to-r from-emerald-500 to-blue-400';
 
-                // Определение статуса и плашки
-                let verdictClass = "text-xs font-semibold px-2.5 py-0.5 rounded-full ";
-                let verdictText = "";
-                
-                if (data.violation === 0 && data.score < 50) {
-                    verdictClass += isPrimary 
-                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" 
-                        : "bg-blue-500/10 text-blue-400 border border-blue-500/20";
-                    verdictText = `Чистый старт (${data.score}%)`;
-                } else if (data.score >= 70) {
-                    verdictClass += "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
-                    verdictText = `Системный (${data.score}%)`;
-                } else if (data.score >= 40) {
-                    verdictClass += isPrimary 
-                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" 
-                        : "bg-blue-500/10 text-blue-400 border border-blue-500/20";
-                    verdictText = `Умеренный (${data.score}%)`;
-                } else {
-                    verdictClass += "bg-rose-500/10 text-rose-400 border border-rose-500/20";
-                    verdictText = `Вне системы (${data.score}%)`;
+                // Считаем прогресс от 0 до 6
+                let filledSteps = data.activeDays.size;
+                if (data.hasWeekend) filledSteps++;
+                if (filledSteps > 6) filledSteps = 6;
+
+                const percent = Math.round((filledSteps / 6) * 100);
+
+                // Динамические надписи по ходу изменения шкалы (от 0 до 6 шагов)
+                let statusLabel = "";
+                let badgeClass = isPrimary 
+                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" 
+                    : "bg-blue-500/10 text-blue-400 border border-blue-500/20";
+
+                if (filledSteps === 0) {
+                    statusLabel = "Рынок тебя ждет";
+                } else if (filledSteps === 1) {
+                    statusLabel = "Чистый старт";
+                } else if (filledSteps === 2) {
+                    statusLabel = "Так держать";
+                } else if (filledSteps === 3) {
+                    statusLabel = "Отлично идешь";
+                } else if (filledSteps === 4) {
+                    statusLabel = "Уверенный шаг";
+                } else if (filledSteps === 5) {
+                    statusLabel = "Почти у цели";
+                } else if (filledSteps === 6) {
+                    statusLabel = "Пройди бэктест чтобы добить результат до максимум";
+                    badgeClass = "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30";
                 }
 
                 const cardHtml = `
@@ -2159,21 +2193,21 @@ if (dayOfWeek === 6 || dayOfWeek === 0) {
                                 <i class="fa-solid fa-user ${iconColor}"></i>
                                 <span>${name}</span>
                             </span>
-                            <span class="${verdictClass}">${verdictText}</span>
+                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${badgeClass}">${statusLabel} (${filledSteps}/6)</span>
                         </div>
                         <div class="space-y-1 text-xs text-gray-300">
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Успешных сессий:</span>
-                                <span class="font-bold text-emerald-400">${data.clean}</span>
+                                <span class="text-gray-400">Пройдено шагов за неделю:</span>
+                                <span class="font-bold text-amber-400">${filledSteps} из 6</span>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Сессии с нарушением кодекса:</span>
-                                <span class="font-bold text-rose-400">${data.violation}</span>
+                                <span class="text-gray-400">Отметка за выходные:</span>
+                                <span class="font-bold ${data.hasWeekend ? 'text-emerald-400' : 'text-gray-500'}">${data.hasWeekend ? 'Зачтено (Скрин + Чекбоксы)' : 'Ожидает бэктеста'}</span>
                             </div>
                         </div>
                         <!-- Progress bar -->
                         <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
-                            <div class="${barGradient} h-full transition-all duration-500" style="width: ${data.score}%"></div>
+                            <div class="${barGradient} h-full transition-all duration-500" style="width: ${percent}%"></div>
                         </div>
                     </div>
                 `;
