@@ -2717,26 +2717,17 @@ const DB_NODE_NAME = 'reports_vladimir';
         };
         
         function loadFirebaseConfig() {
-            let savedConfig = localStorage.getItem('firebase_sync_config');
-            if (!savedConfig) {
-                savedConfig = JSON.stringify(DEFAULT_CONFIG);
-                localStorage.setItem('firebase_sync_config', savedConfig);
-            }
+            // Всегда используем дефолтные настройки для автоматической синхронизации с братом
+            const cfg = DEFAULT_CONFIG;
+            localStorage.setItem('firebase_sync_config', JSON.stringify(cfg));
             
-            if (savedConfig) {
-                try {
-                    const cfg = JSON.parse(savedConfig);
-                    document.getElementById('fb-database-url').value = cfg.databaseURL || '';
-                    document.getElementById('fb-api-key').value = cfg.apiKey || '';
-                    document.getElementById('fb-project-id').value = cfg.projectId || '';
-                    
-                    initFirebase(cfg);
-                } catch (e) {
-                    fallbackToLocal();
-                }
-            } else {
-                fallbackToLocal();
-            }
+            // Заполняем поля в модалке на всякий случай
+            document.getElementById('fb-database-url').value = cfg.databaseURL || '';
+            document.getElementById('fb-api-key').value = cfg.apiKey || '';
+            document.getElementById('fb-project-id').value = cfg.projectId || '';
+            
+            // Сразу же запускаем подключение к базе без лишних вопросов
+            initFirebase(cfg);
         }
 
        function initFirebase(cfg) {
