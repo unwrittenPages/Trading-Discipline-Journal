@@ -1859,9 +1859,9 @@ const DB_NODE_NAME = 'reports_vladimir';
 
                 // Запрос к Gemini API (используем публичную эндпоинт-модель или твой ключ)
                 // Замени 'YOUR_GEMINI_API_KEY' на свой реальный бесплатный ключ из Google AI Studio
-                const API_KEY = "YOUR_GEMINI_API_KEY"; 
+                const API_KEY = "AQ.Ab8RN6JbUK4tHjZm4Dd4QaXF6sagVuzH-HYG51qbGfOfm3NIIA"; 
                 
-                if (API_KEY === "YOUR_GEMINI_API_KEY") {
+                if (API_KEY === "AQ.Ab8RN6JbUK4tHjZm4Dd4QaXF6sagVuzH-HYG51qbGfOfm3NIIA") {
                     console.warn("API ключ ИИ не задан. Пропускаем ИИ-проверку для теста.");
                 } else {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
