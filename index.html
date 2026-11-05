@@ -3669,17 +3669,14 @@ function closeWeekendModal() {
             requestAnimationFrame(raf);
         }
 
-// Универсальное открытие любой модалки с остановкой Lenis
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
 
     // Блокируем прокрутку основного фона страницы
     document.body.style.overflow = 'hidden';
-    modal.classList.ون; // остаётся как было (.classList.remove('hidden'))
-    modal.classList.remove('hidden');
+    modal.classList.remove('hidden'); // <--- Оставили только корректный вызов
 
-    // Обязательно останавливаем глобальный Lenis, чтобы он не ломал скролл в модалке
     if (typeof lenis !== 'undefined' && lenis !== null) {
         lenis.stop();
     }
