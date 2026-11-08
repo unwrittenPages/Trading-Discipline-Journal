@@ -702,9 +702,8 @@
 <!-- Modal Checklist for Rules & System AMD Guide -->
     <div id="rule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden" data-lenis-prevent>
         <div class="glass-panel w-full max-w-2xl md:max-w-3xl lg:max-w-4xl rounded-2xl border border-brand-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl transition-all duration-300">
-            <!-- Header (фиксированная шапка с отступами) -->
+            <!-- Header (свои отступы для шапки) -->
             <div class="flex items-center justify-between border-b border-brand-border py-4 px-5 sm:px-6 flex-shrink-0 gap-4">
-                <!-- Обертка с маской overflow-hidden для эффекта бегущей строки -->
                 <div class="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden relative">
                     <h3 class="font-bold text-white text-base sm:text-lg flex items-center space-x-2 min-w-max">
                         <span id="rule-modal-main-title" class="block">Кодекс Дисциплины и Регламент AMD</span>
@@ -712,21 +711,19 @@
                 </div>
 
                 <div class="flex items-center space-x-2 flex-shrink-0">
-                    <!-- Кнопки изменения шрифта -->
                     <div class="flex items-center space-x-1 bg-brand-dark/60 border border-brand-border rounded-lg px-1.5 py-0.5 text-xs">
                         <button onclick="adjustRuleFontSize(-1)" class="text-gray-400 hover:text-amber-400 px-1 font-bold transition" title="Уменьшить шрифт">A-</button>
                         <span class="text-brand-border">|</span>
                         <button onclick="adjustRuleFontSize(1)" class="text-gray-400 hover:text-amber-400 px-1 font-bold transition" title="Увеличить шрифт">A+</button>
                     </div>
-                    <!-- Кнопка закрытия / возврата -->
                     <button id="rule-modal-top-btn" onclick="toggleRuleModal()" class="text-gray-400 hover:text-amber-400 text-lg p-1 transition group" title="Закрыть">
                         <i id="rule-modal-top-icon" class="fa-solid fa-xmark text-gray-400 group-hover:text-amber-400 transition-colors"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Контейнер со списком этапов / детальным просмотром (скролл строго по правому краю) -->
-            <div id="rule-modal-content-container" class="space-y-3 overflow-y-auto py-4 px-5 sm:px-6 flex-1 text-sm transition-all duration-200" style="font-size: 0.875rem;" data-lenis-prevent>
+            <!-- Контейнер скролла: ПАДДИНГИ УБРАНЫ (px-0), чтобы бегунок прижался в самый край панели -->
+            <div id="rule-modal-content-container" class="space-y-3 overflow-y-auto py-4 px-3 sm:px-5 flex-1 text-sm transition-all duration-200" style="font-size: 0.875rem;" data-lenis-prevent>
                 <!-- Динамически наполняется через JavaScript -->
             </div>
 
@@ -792,7 +789,7 @@
                         <p class="text-[11px] text-gray-400">Подготовка разума, проработка ошибок и бэктесты (FX Replay)</p>
                     </div>
                 </div>
-                <button onclick="closeWeekendModal()" class="text-gray-400 hover:text-white p-1">
+                <button onclick="closeWeekendModal()" class="text-gray-400 hover:text-white p-2 pl-3">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
@@ -1280,7 +1277,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                 rulesList.forEach((rule, idx) => {
                     const btn = document.createElement('div');
                     // Добавили relative hover:z-20, чтобы карточка при наведении и подъеме перекрывала соседей
-                    btn.className = "glass-card p-3.5 rounded-xl border border-brand-border hover:border-amber-400/50 cursor-pointer transition flex items-center justify-between font-medium group relative hover:z-20";
+                    btn.className = "glass-card p-3.5 mx-2 sm:mx-3 rounded-xl border border-brand-border hover:border-amber-400/50 cursor-pointer transition flex items-center justify-between font-medium group relative hover:z-20";
                     btn.innerHTML = `
                         <div class="flex items-center space-x-2 min-w-0 pr-2">
                             <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-[11px] border border-amber-500/20 flex-shrink-0">${idx}</span>
