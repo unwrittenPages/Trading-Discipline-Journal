@@ -699,10 +699,11 @@
         </div>
     </div>
 
- <!-- Modal Checklist for Rules & System AMD Guide -->
-    <div id="rule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-panel w-full max-w-2xl md:max-w-3xl lg:max-w-4xl rounded-2xl p-6 border border-brand-border space-y-5 max-h-[90vh] flex flex-col shadow-2xl transition-all duration-300" data-lenis-prevent>
-            <div class="flex items-center justify-between border-b border-brand-border pb-3 flex-shrink-0 gap-4">
+<!-- Modal Checklist for Rules & System AMD Guide -->
+    <div id="rule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden" data-lenis-prevent>
+        <div class="glass-panel w-full max-w-2xl md:max-w-3xl lg:max-w-4xl rounded-2xl border border-brand-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl transition-all duration-300">
+            <!-- Header (фиксированная шапка с отступами) -->
+            <div class="flex items-center justify-between border-b border-brand-border py-4 px-5 sm:px-6 flex-shrink-0 gap-4">
                 <!-- Обертка с маской overflow-hidden для эффекта бегущей строки -->
                 <div class="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden relative">
                     <h3 class="font-bold text-white text-base sm:text-lg flex items-center space-x-2 min-w-max">
@@ -724,12 +725,12 @@
                 </div>
             </div>
 
-            <!-- Контейнер со списком этапов / детальным просмотром -->
-            <div id="rule-modal-content-container" class="space-y-3 overflow-y-auto pr-1 pt-3 flex-1 text-sm transition-all duration-200" style="font-size: 0.875rem;">
-    <!-- Динамически наполняется через JavaScript -->
-</div>
+            <!-- Контейнер со списком этапов / детальным просмотром (скролл строго по правому краю) -->
+            <div id="rule-modal-content-container" class="space-y-3 overflow-y-auto py-4 px-5 sm:px-6 flex-1 text-sm transition-all duration-200" style="font-size: 0.875rem;" data-lenis-prevent>
+                <!-- Динамически наполняется через JavaScript -->
+            </div>
 
-            <div id="rule-modal-footer-close" class="flex-shrink-0 pt-2 border-t border-brand-border/60">
+            <div id="rule-modal-footer-close" class="flex-shrink-0 pt-3 pb-4 px-5 sm:px-6 border-t border-brand-border/60">
                 <button onclick="toggleRuleModal()" class="w-full bg-brand-card hover:bg-gray-800 text-white font-medium py-3 sm:py-2.5 rounded-xl border border-brand-border text-xs transition">
                     Понятно, закрыть
                 </button>
@@ -2626,10 +2627,9 @@ const DB_NODE_NAME = 'reports_vladimir';
                 if (isHidden) {
                     activeRuleIndex = null; // сбрасываем при открытии на главный список
                     renderRulesModalList();
-                    modal.classList.remove('hidden');
                     
-                    // Блокируем прокрутку фона сайта
-                    document.body.style.overflow = 'hidden';
+                    // Используем единый метод открытия с остановкой Lenis и блокировкой фона
+                    openModal('rule-modal');
 
                     // Изолируем скролл внутри модалки от внешних преград
                     const modalContent = modal.querySelector('#rule-modal-content-container');
@@ -2645,10 +2645,8 @@ const DB_NODE_NAME = 'reports_vladimir';
                         }, { passive: false });
                     }
                 } else {
-                    modal.classList.add('hidden');
-                    
-                    // Возвращаем прокрутку фона
-                    document.body.style.overflow = '';
+                    // Используем единый метод закрытия
+                    closeModal('rule-modal');
                 }
             }
         }
