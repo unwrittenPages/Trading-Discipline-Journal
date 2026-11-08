@@ -798,14 +798,16 @@
 
             <!-- Scrollable Content Container (скроллбар строго на краю, а контент внутри с отступами) -->
             <div class="overflow-y-auto flex-1 py-4 px-3 sm:px-6 space-y-5" data-lenis-prevent>
-                <!-- 1. Персональная работа над ошибкой недели -->
-                <div id="personal-error-focus-box" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-1.5 hidden">
-                    <div class="text-xs font-bold text-rose-300 flex items-center space-x-1.5">
-                        <i class="fa-solid fa-bullseye"></i>
-                        <span>Главный фокус недели (Твоя последняя ошибка):</span>
-                    </div>
-                    <p id="personal-error-text" class="text-xs text-gray-200 leading-relaxed font-medium"></p>
-                </div>
+                <!-- 1. Персональная работа над ошибкой недели (в строку) -->
+<div id="personal-error-focus-box" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 items-center space-x-3 hidden" style="display: none;">
+    <div class="w-9 h-9 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center text-base border border-rose-500/30 shrink-0">
+        <i class="fa-solid fa-bullseye"></i>
+    </div>
+    <div class="flex-1 min-w-0 text-xs">
+        <div class="font-bold text-rose-300">Главный фокус недели (Твоя последняя ошибка):</div>
+        <p id="personal-error-text" class="text-gray-200 leading-relaxed font-medium mt-0.5"></p>
+    </div>
+</div>
 
                 <!-- 2. Чек-лист микронапоминаний с последовательным таймером чтения -->
                 <div class="space-y-3 text-xs" id="weekend-checklist-container">
