@@ -3237,8 +3237,8 @@ function deleteArchivedBacktest(event, id, fbKey) {
         }
 
        // Восстановление состояния чекбоксов из localStorage или Firebase
+      // Восстановление состояния чекбоксов и визуальной разблокировки блоков из localStorage или Firebase
         function loadSavedChecklistState() {
-            // Включаем мягкую индикацию загрузки на чекбоксах/статусе
             const sessionStatus = document.getElementById('weekend-session-status');
             if (sessionStatus) {
                 sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Загрузка данных из облака...</span></span>';
@@ -3247,20 +3247,8 @@ function deleteArchivedBacktest(event, id, fbKey) {
             if (isFirebaseConnected && dbInstance) {
                 const checklistRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${currentUser}`);
                 window.fbSDK.onValue(checklistRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        for (let i = 1; i <= 3; i++) {
-                            const chk = document.getElementById(`chk-${i}`);
-                            if (chk) {
-                                chk.checked = !!data[`chk_${i}`];
-                            }
-                        }
-                    } else {
-                        for (let i = 1; i <= 3; i++) {
-                            const chk = document.getElementById(`chk-${i}`);
-                            if (chk) chk.checked = false;
-                        }
-                    }
+                    const data = snapshot.val() || {};
+                    applyChecklistVisuals(data);
                     updateWeekendProgress();
                     renderBacktestStats();
                 }, (error) => {
@@ -3271,14 +3259,65 @@ function deleteArchivedBacktest(event, id, fbKey) {
             } else {
                 // Режим localStorage
                 const saved = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
-                for (let i = 1; i <= 3; i++) {
-                    const chk = document.getElementById(`chk-${i}`);
-                    if (chk) {
-                        chk.checked = !!saved[`chk_${i}`];
-                    }
-                }
+                applyChecklistVisuals(saved);
                 updateWeekendProgress();
                 renderBacktestStats();
+            }
+        }
+
+        // Вспомогательная функция отрисовки чекбоксов, текстов и мгновенного скрытия линий таймера
+        function applyChecklistVisuals(data) {
+            const chk1 = !!data.chk_1;
+            const chk2 = !!data.chk_2;
+            const chk3 = !!data.chk_3;
+
+            // Шаг 1
+            const c1 = document.getElementById('chk-1');
+            const b1 = document.getElementById('step-box-1');
+            if (c1) c1.checked = chk1;
+            if (b1) {
+                if (chk1) b1.classList.add('border-amber-400/60', 'bg-amber-500/10');
+                else b1.classList.remove('border-amber-400/60', 'bg-amber-500/10');
+            }
+
+            // Шаг 2 (если первый или второй шаг выполнен — разблокируем)
+            const b2 = document.getElementById('step-box-2');
+            const title2 = document.getElementById('title-2');
+            const desc2 = document.getElementById('desc-2');
+            const timer2 = document.getElementById('timer-line-2');
+            const c2 = document.getElementById('chk-2');
+
+            if (chk1 || chk2) {
+                if (b2) b2.classList.remove('opacity-40', 'pointer-events-none', 'filter', 'grayscale');
+                if (title2) { title2.innerText = stepLessons[2].title; title2.className = "text-white text-xs block mb-0.5"; }
+                if (desc2) { desc2.innerText = stepLessons[2].desc; desc2.className = "text-xs text-gray-300 leading-relaxed"; }
+                if (c2) c2.disabled = false;
+                if (timer2) timer2.style.width = '0%'; // Убираем линию таймера при загрузке
+            }
+            if (c2) c2.checked = chk2;
+            if (b2) {
+                if (chk2) b2.classList.add('border-amber-400/60', 'bg-amber-500/10');
+                else if (chk1) b2.classList.remove('border-amber-400/60', 'bg-amber-500/10');
+            }
+
+            // Шаг 3 (если второй или третий шаг выполнен — разблокируем)
+            const b3 = document.getElementById('step-box-3');
+            const title3 = document.getElementById('title-3');
+            const desc3 = document.getElementById('desc-3');
+            const timer3 = document.getElementById('timer-line-3');
+            const c3 = document.getElementById('chk-3');
+
+            if (chk2 || chk3) {
+                if (b3) b3.classList.remove('opacity-40', 'pointer-events-none', 'filter', 'grayscale');
+                if (title3) { title3.innerText = stepLessons[3].title; title3.className = "text-white text-xs block mb-0.5"; }
+                if (desc3) { desc3.innerText = stepLessons[3].desc; desc3.className = "text-xs text-gray-300 leading-relaxed"; }
+                if (c3) c3.disabled = false;
+                if (timer3) timer3.style.width = '0%'; // Убираем линию таймера при загрузке
+            }
+            if (c3) c3.checked = chk3;
+            if (b3) {
+                if (chk3) b3.classList.add('border-amber-400/60', 'bg-amber-500/10');
+                else if (chk2) b3.classList.remove('border-amber-400/60', 'bg-amber-500/10');
             }
         }
         function onStepCheckboxChange(num, event) {
@@ -3327,14 +3366,19 @@ function deleteArchivedBacktest(event, id, fbKey) {
             descEl.className = "text-xs text-gray-300 leading-relaxed";
 
             // Линия таймера чтения за 17 секунд
-            timerLine.style.width = '0%';
-            void timerLine.offsetWidth;
-            timerLine.style.transition = 'width 17s linear';
-            timerLine.style.width = '100%';
+            if (timerLine) {
+                timerLine.style.width = '0%';
+                void timerLine.offsetWidth;
+                timerLine.style.transition = 'width 17s linear';
+                timerLine.style.width = '100%';
+            }
 
             setTimeout(() => {
                 chk.disabled = false;
-                timerLine.style.backgroundColor = '#10B981';
+                if (timerLine) {
+                    timerLine.style.transition = 'width 0.4s ease';
+                    timerLine.style.width = '0%'; // Мгновенно убираем линию после окончания отсчета, чтобы не мешала
+                }
             }, 17000);
         }
 
