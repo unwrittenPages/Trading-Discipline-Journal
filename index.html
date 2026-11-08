@@ -2347,20 +2347,21 @@ const DB_NODE_NAME = 'reports_vladimir';
             updateMonthlyStats();
             const container = document.getElementById('reports-feed');
             if (!container) return;
-            container.innerHTML = '';
 
-            document.getElementById('reports-count').innerText = `${reportsHistory.length} записей`;
-
-            if (reportsHistory.length === 0) {
+            // Если соединение с Firebase активно, но лента пуста и данные еще ждем, 
+            // показываем анимацию загрузки в Журнале сессий
+            if (isFirebaseConnected && reportsHistory.length === 0 && !window._reportsLoadedOnce) {
                 container.innerHTML = `
-                    <div class="glass-panel p-8 text-center text-gray-400 rounded-xl">
-                        <i class="fa-solid fa-folder-open text-3xl mb-2 text-gray-600"></i>
-                        <p class="text-xs">Журнал пока пуст. Будьте первым, кто сдаст отчёт за сегодня!</p>
+                    <div class="glass-panel p-8 text-center text-amber-400 rounded-xl flex items-center justify-center space-x-3">
+                        <i class="fa-solid fa-spinner fa-spin text-xl"></i>
+                        <span class="text-xs font-medium">Загрузка журнала сессий из базы данных...</span>
                     </div>
                 `;
                 return;
             }
 
+            container.innerHTML = '';
+            document.getElementById('reports-count').innerText = `${reportsHistory.length} записей`;
             reportsHistory.forEach(item => {
                 const isClean = item.compliance === 'clean';
                 
@@ -2684,6 +2685,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                     } else {
                         reportsHistory = [];
                     }
+                    window._reportsLoadedOnce = true; // Флаг: данные получены, спиннер убираем
                     renderReportsFeed();
                 });
 
@@ -3237,8 +3239,8 @@ function deleteArchivedBacktest(event, id, fbKey) {
         }
 
        // Восстановление состояния чекбоксов из localStorage или Firebase
-      // Восстановление состояния чекбоксов и визуальной разблокировки блоков из localStorage или Firebase
-        function loadSavedChecklistState() {
+     function loadSavedChecklistState() {
+            // Анимация загрузки в первом главном блоке («Склонность к системной торговле»)
             const sessionStatus = document.getElementById('weekend-session-status');
             if (sessionStatus) {
                 sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Загрузка данных из облака...</span></span>';
