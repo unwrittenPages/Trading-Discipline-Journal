@@ -717,6 +717,26 @@
         </div>
     </div>
 
+    <!-- Кастомная модалка: Дополнительный бэктест сохранен -->
+    <div id="extra-backtest-success-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel max-w-sm w-full rounded-2xl p-6 border border-emerald-500/30 text-center space-y-4 shadow-2xl">
+            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/30">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-white text-base">Успешно сохранено!</h3>
+                <p class="text-xs text-gray-300 mt-2 leading-relaxed">
+                    Дополнительный бэктест успешно зафиксирован в архиве и добален в общую статистику!
+                </p>
+            </div>
+            <div class="pt-2">
+                <button onclick="closeExtraBacktestSuccessModal()" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 sm:py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20">
+                    Отлично
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Кастомная модалка: Предупреждение об отсутствующем скриншоте -->
     <div id="screenshot-warning-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel max-w-sm w-full rounded-2xl p-6 border border-amber-500/30 text-center space-y-4 shadow-2xl">
@@ -3361,8 +3381,8 @@ function deleteArchivedBacktest(event, id, fbKey) {
                 `;
             }
         }
-
-        function handleExtraBacktest(event) {
+        
+function handleExtraBacktest(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -3372,8 +3392,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
                 let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
                 backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
                 localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
-                
-                // Если подключен Firebase, отправляем дополнительный скриншот туда же
+
                 if (isFirebaseConnected && dbInstance) {
                     const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
                     window.fbSDK.push(backtestRef, { id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
@@ -3381,10 +3400,22 @@ function deleteArchivedBacktest(event, id, fbKey) {
 
                 renderBacktestStats();
                 renderBacktestHistory();
-                updateSaveButtonState(); // <--- Обновляем статус кнопки
-                alert('Дополнительный бэктест успешно сохранен в архив и статистику!');
+                updateSaveButtonState();
+                
+                // Вместо alert() вызываем нашу стильную модалку
+                openExtraBacktestSuccessModal();
             };
             reader.readAsDataURL(file);
+        }
+
+        function openExtraBacktestSuccessModal() {
+            const modal = document.getElementById('extra-backtest-success-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeExtraBacktestSuccessModal() {
+            const modal = document.getElementById('extra-backtest-success-modal');
+            if (modal) modal.classList.add('hidden');
         }
 
         // Таймер обратного отсчета до старта сессии Франкфурта (понедельник, 09:00)
