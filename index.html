@@ -176,6 +176,11 @@
         padding: 0.75rem !important;
         margin-top: 1.5rem !important;
     }
+
+            /* Исключение для модалки выходных: сбрасываем отступы у панели под 0, чтобы скролл прижался к краю */
+    #weekend-modal .glass-panel {
+        padding: 0rem !important;
+    }
        /* Меняем верхний отступ main (mt-8) с 2rem на 1.5rem на мобилках */
     main.mt-8,
     .mt-8 {
@@ -776,7 +781,7 @@
     <div id="weekend-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden" data-lenis-prevent>
         <div class="glass-panel max-w-4xl w-full rounded-2xl border border-brand-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl">
             <!-- Header (фиксированная шапка с отступами) -->
-            <div class="flex items-center justify-between border-b border-brand-border/60 py-4 px-5 sm:px-6 flex-shrink-0">
+            <div class="flex items-center justify-between border-b border-brand-border/60 py-4 px-3 sm:px-6 flex-shrink-0">
                 <div class="flex items-center space-x-3">
                     <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30">
                         <i class="fa-solid fa-seedling"></i>
