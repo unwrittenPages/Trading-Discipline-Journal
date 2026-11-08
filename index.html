@@ -885,10 +885,10 @@
 
             <!-- Прогресс за эти выходные -->
             <div class="p-3 rounded-xl bg-brand-dark/40 border border-brand-border/60 space-y-2">
-                <div class="flex items-center justify-between text-xs">
-                    <span class="text-gray-300 font-medium">Прогресс за эти выходные:</span>
-                    <span id="weekend-session-status" class="text-amber-400 font-bold">Загрузите бэктесты</span>
-                </div>
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-2 text-xs text-center sm:text-left">
+    <span class="text-gray-300 font-medium">Прогресс за эти выходные:</span>
+    <span id="weekend-session-status" class="text-amber-400 font-bold text-center block w-full sm:w-auto"></span>
+</div>
                 <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
                     <div id="weekend-session-bar" class="bg-gradient-to-r from-amber-500 to-emerald-400 h-full w-0 transition-all duration-500"></div>
                 </div>
@@ -2838,13 +2838,10 @@ function closeWeekendModal() {
             const c3 = document.getElementById('chk-3')?.checked ? 1 : 0;
             const totalChecks = c1 + c2 + c3;
 
-            // Проверяем, сохранены ли уже бэктесты за сегодня в архиве
             const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
-            const now = new Date();
-            const todayStr = formatDate(now.getTime());
-            const weekendSaved = backtests.filter(item => item.date === todayStr && item.author === currentUser);
+            const { satStr, sunStr } = getCurrentWeekendDates();
+            const weekendSaved = backtests.filter(item => (item.date === satStr || item.date === sunStr) && item.author === currentUser);
 
-            // Общее количество фото (сохраненные + те, что сейчас в памяти перед сохранением)
             let totalPhotos = weekendSaved.length;
             if (backtestImage1) totalPhotos++;
             if (backtestImage2) totalPhotos++;
@@ -2866,7 +2863,6 @@ function closeWeekendModal() {
             const sessionStatus = document.getElementById('weekend-session-status');
             if (sessionBar) sessionBar.style.width = `${score}%`;
             
-            // Динамический текст в плашке статуса бэктестов
             const pillEl = document.getElementById('weekend-status-pill');
             if (pillEl) {
                 if (totalPhotos === 0) {
@@ -2883,13 +2879,13 @@ function closeWeekendModal() {
 
             if (sessionStatus) {
                 if (score === 100) {
-                    sessionStatus.innerHTML = '<span class="text-emerald-400 font-bold">🔥 Максимальная польза (100%)!</span>';
+                    sessionStatus.innerHTML = '<span class="text-emerald-400 font-bold block text-center w-full">🔥 Максимальная польза (100%)!</span>';
                 } else if (weekendSaved.length > 0) {
-                    sessionStatus.innerHTML = `<span class="text-amber-400 font-bold">Слава Богу! Результаты выходных зафиксированы. (${score}%)</span>`;
+                    sessionStatus.innerHTML = `<span class="text-amber-400 font-bold block text-center w-full">Слава Богу! Результаты выходных зафиксированы. (${score}%)</span>`;
                 } else if (score >= 85) {
-                    sessionStatus.innerHTML = '<span class="text-amber-300">Загрузите 2-й месяц для 100%</span>';
+                    sessionStatus.innerHTML = '<span class="text-amber-300 block text-center w-full">Загрузите 2-й месяц для 100%</span>';
                 } else {
-                    sessionStatus.innerText = 'Загрузите бэктесты';
+                    sessionStatus.innerHTML = '<span class="text-gray-300 block text-center w-full">Загрузите бэктесты</span>';
                 }
             }
 
