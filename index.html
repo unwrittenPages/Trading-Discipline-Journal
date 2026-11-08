@@ -3026,16 +3026,27 @@ function closeWeekendModal() {
             renderBacktestHistory();
         }
 
-        function deleteArchivedBacktest(event, id) {
-            if (event && event.stopPropagation) event.stopPropagation();
+        function deleteArchivedBacktest(event, id, fbKey) {
+    if (event && event.stopPropagation) event.stopPropagation();
 
-            let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
-            backtests = backtests.filter(item => String(item.id) !== String(id));
-            localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
-
+    if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
+        const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests/${fbKey}`);
+        window.fbSDK.remove(itemRef).then(() => {
             renderBacktestStats();
             renderBacktestHistory();
-        }
+        }).catch(err => {
+            console.error("Backtest delete error:", err);
+            alert("Ошибка при удалении бэктеста из базы данных.");
+        });
+    } else {
+        let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+        backtests = backtests.filter(item => String(item.id) !== String(id));
+        localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
+
+        renderBacktestStats();
+        renderBacktestHistory();
+    }
+}
 
        
 
@@ -3121,10 +3132,10 @@ function closeWeekendModal() {
                 let mainImagesHtml = '';
                 mainItems.forEach((item, idx) => {
                     const deleteBtnHtml = isEditing ? `
-                        <button onclick="deleteArchivedBacktest(event, '${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    ` : '';
+    <button onclick="deleteArchivedBacktest(event, '${item.id}', '${item.fbKey || ''}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+` : '';
 
                     mainImagesHtml += `
                         <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Кликните для увеличения'}">
@@ -3140,10 +3151,10 @@ function closeWeekendModal() {
                     extraItems.forEach((item, idx) => {
                         const actualIdx = idx + 2;
                         const deleteBtnHtml = isEditing ? `
-                            <button onclick="deleteArchivedBacktest(event, '${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        ` : '';
+    <button onclick="deleteArchivedBacktest(event, '${item.id}', '${item.fbKey || ''}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+` : '';
 
                         extraImagesHtml += `
                             <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Дополнительный бэктест'}">
@@ -3649,14 +3660,13 @@ function openModal(modalId) {
 
     // Блокируем прокрутку основного фона страницы
     document.body.style.overflow = 'hidden';
-    modal.classList.ون; // остаётся как было (.classList.remove('hidden'))
     modal.classList.remove('hidden');
 
     // Обязательно останавливаем глобальный Lenis, чтобы он не ломал скролл в модалке
     if (typeof lenis !== 'undefined' && lenis !== null) {
         lenis.stop();
     }
-}
+}    
 
 // Универсальное закрытие любой модалки с возобновлением Lenis
 function closeModal(modalId) {
