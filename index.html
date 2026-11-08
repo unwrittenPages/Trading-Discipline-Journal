@@ -2153,6 +2153,19 @@ const DB_NODE_NAME = 'reports_vladimir';
 
       // Функция расчета и рендеринга склонности к системной торговле за текущую неделю
         function updateMonthlyStats() {
+            const gridContainer = document.getElementById('monthly-stats-grid');
+            
+            // Если соединение с Firebase активно, но данные еще не получены, показываем анимацию загрузки
+            if (gridContainer && isFirebaseConnected && !window._statsLoadedOnce) {
+                gridContainer.innerHTML = `
+                    <div class="col-span-1 md:col-span-2 glass-panel p-8 text-center text-amber-400 rounded-xl flex items-center justify-center space-x-3">
+                        <i class="fa-solid fa-spinner fa-spin text-xl"></i>
+                        <span class="text-xs font-medium">Загрузка индекса дисциплины из базы данных...</span>
+                    </div>
+                `;
+                return;
+            }
+
             const now = new Date();
             
             // Вычисляем начало текущей недели (Понедельник 09:00 утра)
@@ -2685,7 +2698,8 @@ const DB_NODE_NAME = 'reports_vladimir';
                     } else {
                         reportsHistory = [];
                     }
-                    window._reportsLoadedOnce = true; // Флаг: данные получены, спиннер убираем
+                    window._reportsLoadedOnce = true; // Флаг: журнал получен
+                    window._statsLoadedOnce = true;  // Флаг: статистика получена
                     renderReportsFeed();
                 });
 
@@ -2762,6 +2776,8 @@ const DB_NODE_NAME = 'reports_vladimir';
             } else {
                 reportsHistory = [];
             }
+            window._reportsLoadedOnce = true;
+            window._statsLoadedOnce = true;
             renderReportsFeed();
         }
 
