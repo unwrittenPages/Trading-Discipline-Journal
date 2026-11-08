@@ -1335,6 +1335,7 @@ const DB_NODE_NAME = 'reports_vladimir';
             updateUserUI();
             initRulesAndErrors();
             loadFirebaseConfig();
+           loadSavedChecklistState(); // <--- Добавили инициализацию чекбоксов при старте
             initSessionTimer();
             updateWeekendCountdown(); // <--- Добавь сюда
             setInterval(() => {
@@ -2702,10 +2703,18 @@ const DB_NODE_NAME = 'reports_vladimir';
                     renderBacktestStats();
                     renderBacktestHistory();
                 });
-
-                // СЛУШАТЕЛЬ ЧЕКБОКСОВ ВЫХОДНЫХ (Для Vladimir и Max)
+// СЛУШАТЕЛЬ ЧЕКБОКСОВ ВЫХОДНЫХ (Для Vladimir и Max)
                 ['Vladimir', 'Max'].forEach(userName => {
                     const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${userName}`);
+                    
+                    // Показываем спиннер загрузки в главном блоке при старте
+                    if (userName === currentUser) {
+                        const sessionStatus = document.getElementById('weekend-session-status');
+                        if (sessionStatus) {
+                            sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Синхронизация с облаком...</span></span>';
+                        }
+                    }
+
                     window.fbSDK.onValue(checkRef, (snapshot) => {
                         const data = snapshot.val();
                         if (data) {
@@ -2713,7 +2722,6 @@ const DB_NODE_NAME = 'reports_vladimir';
                         }
                         if (userName === currentUser) {
                             loadSavedChecklistState();
-                            updateWeekendProgress();
                         }
                     });
                 });
@@ -3228,8 +3236,8 @@ function deleteArchivedBacktest(event, id, fbKey) {
             onStepCheckboxChange(num);
         }
 
-        // Восстановление состояния чекбоксов из localStorage
-       function loadSavedChecklistState() {
+       // Восстановление состояния чекбоксов из localStorage или Firebase
+        function loadSavedChecklistState() {
             // Включаем мягкую индикацию загрузки на чекбоксах/статусе
             const sessionStatus = document.getElementById('weekend-session-status');
             if (sessionStatus) {
@@ -3237,7 +3245,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
             }
 
             if (isFirebaseConnected && dbInstance) {
-                const checklistRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist`);
+                const checklistRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${currentUser}`);
                 window.fbSDK.onValue(checklistRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
@@ -3246,6 +3254,11 @@ function deleteArchivedBacktest(event, id, fbKey) {
                             if (chk) {
                                 chk.checked = !!data[`chk_${i}`];
                             }
+                        }
+                    } else {
+                        for (let i = 1; i <= 3; i++) {
+                            const chk = document.getElementById(`chk-${i}`);
+                            if (chk) chk.checked = false;
                         }
                     }
                     updateWeekendProgress();
@@ -3257,7 +3270,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
                 });
             } else {
                 // Режим localStorage
-                const saved = JSON.parse(localStorage.getItem(`${DB_NODE_NAME}_checklist_local`) || '{}');
+                const saved = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
                 for (let i = 1; i <= 3; i++) {
                     const chk = document.getElementById(`chk-${i}`);
                     if (chk) {
@@ -3268,7 +3281,6 @@ function deleteArchivedBacktest(event, id, fbKey) {
                 renderBacktestStats();
             }
         }
-
         function onStepCheckboxChange(num, event) {
             if (event) event.stopPropagation();
             const chk = document.getElementById(`chk-${num}`);
