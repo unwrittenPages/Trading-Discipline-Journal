@@ -1335,12 +1335,14 @@ const DB_NODE_NAME = 'reports_vladimir';
             updateUserUI();
             initRulesAndErrors();
             loadFirebaseConfig();
-           loadSavedChecklistState(); // <--- Добавили инициализацию чекбоксов при старте
+            loadSavedChecklistState();
             initSessionTimer();
-            updateWeekendCountdown(); // <--- Добавь сюда
+            updateWeekendCountdown();
+            renderReportsFeed(); // <--- Запускаем первичный рендеринг (покажет анимацию ожидания базы)
+            
             setInterval(() => {
                 initSessionTimer();
-                updateWeekendCountdown(); // <--- И сюда каждую секунду
+                updateWeekendCountdown();
             }, 1000); 
         });
 
