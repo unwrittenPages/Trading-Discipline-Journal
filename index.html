@@ -3229,57 +3229,44 @@ function deleteArchivedBacktest(event, id, fbKey) {
         }
 
         // Восстановление состояния чекбоксов из localStorage
-        function loadSavedChecklistState() {
-            const savedState = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
-            
-            [1, 2, 3].forEach(num => {
-                const chk = document.getElementById(`chk-${num}`);
-                const box = document.getElementById(`step-box-${num}`);
-                const titleEl = document.getElementById(`title-${num}`);
-                const descEl = document.getElementById(`desc-${num}`);
-                const timerLine = document.getElementById(`timer-line-${num}`);
+       function loadSavedChecklistState() {
+            // Включаем мягкую индикацию загрузки на чекбоксах/статусе
+            const sessionStatus = document.getElementById('weekend-session-status');
+            if (sessionStatus) {
+                sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Загрузка данных из облака...</span></span>';
+            }
 
-                if (savedState[`chk_${num}`]) {
+            if (isFirebaseConnected && dbInstance) {
+                const checklistRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist`);
+                window.fbSDK.onValue(checklistRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        for (let i = 1; i <= 3; i++) {
+                            const chk = document.getElementById(`chk-${i}`);
+                            if (chk) {
+                                chk.checked = !!data[`chk_${i}`];
+                            }
+                        }
+                    }
+                    updateWeekendProgress();
+                    renderBacktestStats();
+                }, (error) => {
+                    console.error("Firebase checklist read error:", error);
+                    updateWeekendProgress();
+                    renderBacktestStats();
+                });
+            } else {
+                // Режим localStorage
+                const saved = JSON.parse(localStorage.getItem(`${DB_NODE_NAME}_checklist_local`) || '{}');
+                for (let i = 1; i <= 3; i++) {
+                    const chk = document.getElementById(`chk-${i}`);
                     if (chk) {
-                        chk.disabled = false;
-                        chk.checked = true;
-                    }
-                    if (box) {
-                        box.classList.remove('opacity-40', 'pointer-events-none', 'filter', 'grayscale');
-                        box.classList.add('border-amber-400/60', 'bg-amber-500/10');
-                    }
-                    if (num > 1 && stepLessons[num]) {
-                        if (titleEl) {
-                            titleEl.innerText = stepLessons[num].title;
-                            titleEl.className = "text-white text-xs block mb-0.5";
-                        }
-                        if (descEl) {
-                            descEl.innerText = stepLessons[num].desc;
-                            descEl.className = "text-xs text-gray-300 leading-relaxed";
-                        }
-                        if (timerLine) {
-                            timerLine.style.width = '100%';
-                            timerLine.style.backgroundColor = '#10B981';
-                        }
-                    }
-                } else if (num > 1 && (savedState[`chk_${num-1}`] || (num === 2 && savedState['chk_1']))) {
-                    // Если предыдущий чекбокс был пройден ранее
-                    if (box) box.classList.remove('opacity-40', 'pointer-events-none', 'filter', 'grayscale');
-                    if (titleEl) {
-                        titleEl.innerText = stepLessons[num].title;
-                        titleEl.className = "text-white text-xs block mb-0.5";
-                    }
-                    if (descEl) {
-                        descEl.innerText = stepLessons[num].desc;
-                        descEl.className = "text-xs text-gray-300 leading-relaxed";
-                    }
-                    if (chk) chk.disabled = false;
-                    if (timerLine) {
-                        timerLine.style.width = '100%';
-                        timerLine.style.backgroundColor = '#10B981';
+                        chk.checked = !!saved[`chk_${i}`];
                     }
                 }
-            });
+                updateWeekendProgress();
+                renderBacktestStats();
+            }
         }
 
         function onStepCheckboxChange(num, event) {
@@ -3770,6 +3757,21 @@ function closeModal(modalId) {
                 btn.innerHTML = `<i class="fa-solid fa-check"></i><span>Зафиксировать и Сохранить</span>`;
                 btn.className = "w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-1.5";
             }
+        }
+
+        // Функция включения анимации ожидания на блоках при старте
+        function showLoadingSkeletons() {
+            const vladWeekEl = document.getElementById('vlad-weekend-count');
+            const maxWeekEl = document.getElementById('max-weekend-count');
+            
+            if (vladWeekEl) vladWeekEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-amber-400"></i>';
+            if (maxWeekEl) maxWeekEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-amber-400"></i>';
+
+            // Можно также подсветить плашки легким пульсом
+            const statsCards = document.querySelectorAll('.glass-panel');
+            statsCards.forEach(card => {
+                // Добавляем класс мягкого сияния загрузки, если нужно
+            });
         }
     </script>
     
