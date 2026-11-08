@@ -2227,7 +2227,6 @@ const DB_NODE_NAME = 'reports_vladimir';
             const otherUser = currentUser === 'Vladimir' ? 'Max' : 'Vladimir';
             const orderedUsers = [currentUser, otherUser];
 
-            const gridContainer = document.getElementById('monthly-stats-grid');
             if (!gridContainer) return;
             gridContainer.innerHTML = '';
 
@@ -2299,7 +2298,6 @@ const DB_NODE_NAME = 'reports_vladimir';
                     badgeClass = "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30";
                 }
 
-                // Логика текста для строки "Безошибочные дни": число яркое, слово "дня/дней" серое
                 let cleanDaysHtml = "";
                 if (cleanCount === 0) {
                     cleanDaysHtml = `<span class="text-gray-400">Пока ни одного дня</span>`;
@@ -2308,14 +2306,9 @@ const DB_NODE_NAME = 'reports_vladimir';
                     cleanDaysHtml = `<span class="font-bold text-emerald-400">${cleanCount}</span> <span class="text-gray-400">${word}</span>`;
                 }
 
-                // Логика текста для строки "Дней с ошибками": серый фразовый текст, либо красная цифра + серое слово
                 let errorsHtml = "";
                 if (violationCount === 0) {
-                    if (cleanCount >= 5) {
-                        errorsHtml = `<span class="text-gray-400 font-normal">Ни одного дня, отличный результат!</span>`;
-                    } else {
-                        errorsHtml = `<span class="text-gray-400 font-normal">Пока ни одного дня, отличный результат!</span>`;
-                    }
+                    errorsHtml = `<span class="text-gray-400 font-normal">Пока ни одного дня, отличный результат!</span>`;
                 } else {
                     const word = violationCount === 1 ? 'день' : 'дня';
                     errorsHtml = `<span class="font-bold text-rose-400">${violationCount}</span> <span class="text-gray-400">${word}</span>`;
@@ -2331,23 +2324,19 @@ const DB_NODE_NAME = 'reports_vladimir';
                             <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${badgeClass}" style="margin-left: 1rem; text-align: center;">${statusLabel} (${filledSteps}/6)</span>
                         </div>
                         <div class="space-y-1 text-xs text-gray-300">
-                            <!-- Строка 1: Пройденные шаги -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Пройдено шагов за неделю:</span>
                                 <span class="font-bold ${hasRebound ? 'text-rose-400' : 'text-amber-400'}">${filledSteps} <span class="text-gray-400 font-normal">из 6</span> ${hasRebound ? '<span class="text-rose-400 font-semibold">(откат -1)</span>' : ''}</span>
                             </div>
-                            <!-- Строка 2: Безошибочные дни -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Безошибочные дни:</span>
                                 <div>${cleanDaysHtml}</div>
                             </div>
-                            <!-- Строка 3: Дней с ошибками -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Дней с ошибками:</span>
                                 <div>${errorsHtml}</div>
                             </div>
                         </div>
-                        <!-- Шкала прогресса -->
                         <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
                             <div class="${barGradient} h-full transition-all duration-500" style="width: ${percent}%"></div>
                         </div>
