@@ -3390,6 +3390,8 @@ function handleExtraBacktest(event) {
             reader.onload = function(e) {
                 const timestamp = Date.now();
                 let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+                
+                // Добавляем новый скриншот
                 backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
                 localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
 
@@ -3398,16 +3400,20 @@ function handleExtraBacktest(event) {
                     window.fbSDK.push(backtestRef, { id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
                 }
 
+                // Пересчитываем статистику и перерисовываем архив
                 renderBacktestStats();
                 renderBacktestHistory();
                 updateSaveButtonState();
-                
-                // Вместо alert() вызываем нашу стильную модалку
+
+                // Сбрасываем input, чтобы можно было выбрать следующий файл
+                event.target.value = '';
+
+                // Модалка вызывается СТРОГО по факту того, что данные записаны и архив обновился
                 openExtraBacktestSuccessModal();
             };
             reader.readAsDataURL(file);
         }
-
+        
         function openExtraBacktestSuccessModal() {
             const modal = document.getElementById('extra-backtest-success-modal');
             if (modal) modal.classList.remove('hidden');
