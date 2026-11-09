@@ -278,7 +278,7 @@
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
 
-   /* Контейнер обрезает всё, что не влезает */
+  /* Контейнер обрезает всё, что не влезает */
 .rule-marquee-container {
     width: 100%;
     overflow: hidden;
@@ -286,21 +286,19 @@
     box-sizing: border-box;
 }
 
-/* Заголовок стартует с нуля и плавно качается туда-обратно */
+/* Запуск анимации движения */
 .rule-marquee-text {
     display: inline-block;
-    /* Убираем padding-left: 100%, чтобы текст начинался сразу с левого края (с нуля) */
-    animation: rulePendulum 10s ease-in-out infinite alternate;
+    padding-left: 0px; /* Стартует строго с левого края */
+    animation: simpleMarquee 12s linear infinite;
 }
 
-/* Траектория: от 0 до упора влево и обратно в 0 */
-@keyframes rulePendulum {
+@keyframes simpleMarquee {
     0%, 15% {
-        transform: translateX(0px); /* Стоит в самом начале 1-1.5 секунды */
+        transform: translateX(0%); /* Пауза в начале */
     }
-    85%, 100% {
-        /* Динамически сдвигаем ровно на разницу между шириной текста и шириной контейнера */
-        transform: translateX(calc(var(--scroll-offset, 0px))); 
+    100% {
+        transform: translateX(-50%); /* Движение */
     }
 }
         /* Плавная вертикальная анимация смены этапов */
@@ -1342,23 +1340,14 @@ const DB_NODE_NAME = 'reports_vladimir';
              const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 20) {
+                        // Оборачиваем в двойной спан для идеального бесшовного цикла с -50%
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
-                        titleEl.innerHTML = `<span class="rule-marquee-text">${rule.title}</span>`;
-                        
-                        // Вычисляем точную ширину текста и контейнера для идеального возврата в 0
-                        requestAnimationFrame(() => {
-                            const container = titleEl;
-                            const textSpan = titleEl.querySelector('.rule-marquee-text');
-                            if (container && textSpan) {
-                                const overflowWidth = textSpan.offsetWidth - container.offsetWidth;
-                                // Если текст длиннее контейнера, сдвигаем ровно на величину переполнения со знаком минус
-                                if (overflowWidth > 0) {
-                                    textSpan.style.setProperty('--scroll-offset', `-${overflowWidth + 20}px`);
-                                } else {
-                                    textSpan.style.setProperty('--scroll-offset', `0px`);
-                                }
-                            }
-                        });
+                        titleEl.innerHTML = `
+                            <span class="rule-marquee-text">
+                                <span class="inline-block text-left">${rule.title}</span>
+                                <span class="inline-block text-left" style="padding-left: 50px;">${rule.title}</span>
+                            </span>
+                        `;
                     } else {
                         titleEl.className = "block text-left w-full";
                         titleEl.innerText = rule.title;
