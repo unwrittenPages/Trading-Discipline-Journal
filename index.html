@@ -1343,18 +1343,15 @@ const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 30) {
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
+                        // Оставляем монолитную строку без пробелов
                         titleEl.innerHTML = `<span class="rule-marquee-text"><span class="inline-block marquee-item-1">${rule.title}</span><span class="inline-block marquee-item-2" style="padding-left: 60px;">${rule.title}</span></span>`;
                         
-                        // ИСПОЛЬЗУЕМ setTimeout, чтобы дать браузеру время полностью отрисовать стили модалки и шрифта Inter
-                        setTimeout(() => {
-                            const firstItem = titleEl.querySelector('.marquee-item-1');
-                            const wrapper = titleEl.querySelector('.rule-marquee-text');
-                            if (firstItem && wrapper) {
-                                const totalDist = firstItem.offsetWidth + 60; 
-                                wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
-                            }
-                        }, 50); // 50 миллисекунд гарантируют, что DOM и шрифты полностью готовы
+                        // Вызываем отдельную функцию задания дистанции с небольшой задержкой, 
+                        // чтобы браузер успел применить стили (точно как при ручном вводе в консоли)
+                        applyMarqueeDistance(titleEl);
+
                     } else {
+                        // Короткие заголовки выводятся статично без анимации
                         titleEl.className = "block text-left w-full truncate";
                         titleEl.innerText = rule.title;
                     }
@@ -1415,7 +1412,31 @@ const rule = rulesList[activeRuleIndex];
             }
         }
 
-       
+       // Отдельная функция для точного вычисления и задания scroll distance
+function applyMarqueeDistance(containerEl) {
+    // Делаем несколько попыток с микро-паузами, чтобы гарантировать идеальный замер после отрисовки шрифта
+    const runCalculation = (attempt = 1) => {
+        const firstItem = containerEl.querySelector('.marquee-item-1');
+        const wrapper = containerEl.querySelector('.rule-marquee-text');
+        
+        if (firstItem && wrapper) {
+            const textWidth = firstItem.offsetWidth;
+            
+            // Если браузер еще не отрисовал шрифт и ширина равна 0, пробуем еще раз чуть позже
+            if (textWidth === 0 && attempt < 5) {
+                setTimeout(() => runCalculation(attempt + 1), 30);
+                return;
+            }
+            
+            // Точный расчет: ширина текста + 60px отступа второго блока
+            const totalDist = textWidth + 60;
+            wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
+        }
+    };
+
+    // Запускаем с небольшой задержкой (как твой ручной ввод в консоли)
+    setTimeout(() => runCalculation(), 40);
+}
 
             
         // Функция для плавной вертикальной смены этапов кодекса
