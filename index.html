@@ -1343,18 +1343,19 @@ const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 30) {
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
-                        // Оставляем монолитную строку без лишних пробелов
                         titleEl.innerHTML = `<span class="rule-marquee-text"><span class="inline-block marquee-item-1">${rule.title}</span><span class="inline-block marquee-item-2" style="padding-left: 60px;">${rule.title}</span></span>`;
                         
-                        // Точный расчет: сдвигаем ровно на длину первого блока + его отступ (те самые 529px, которые ты нашел)
+                        // Используем двойной rAF, чтобы замер происходил СТРОГО после завершения отрисовки шрифтов и модалки
                         requestAnimationFrame(() => {
-                            const firstItem = titleEl.querySelector('.marquee-item-1');
-                            const wrapper = titleEl.querySelector('.rule-marquee-text');
-                            if (firstItem && wrapper) {
-                                // Ширина первого текста + 60px отступа, заложенного во второй элемент
-                                const totalDist = firstItem.offsetWidth + 60; 
-                                wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
-                            }
+                            requestAnimationFrame(() => {
+                                const firstItem = titleEl.querySelector('.marquee-item-1');
+                                const wrapper = titleEl.querySelector('.rule-marquee-text');
+                                if (firstItem && wrapper) {
+                                    // Берем чистую ширину первого элемента и прибавляем отступ 60px
+                                    const totalDist = firstItem.offsetWidth + 60; 
+                                    wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
+                                }
+                            });
                         });
                     } else {
                         // Короткие заголовки выводятся статично без анимации
