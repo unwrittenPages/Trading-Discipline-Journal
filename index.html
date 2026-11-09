@@ -278,21 +278,21 @@
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
 
-       @keyframes musicPlayerMarquee {
+      @keyframes musicPlayerMarquee {
     0%, 15% {
-        transform: translateX(0px);
+        transform: translateX(0%);
     }
     85%, 100% {
-        transform: translateX(var(--scroll-distance, -50%));
+        transform: translateX(-50%);
     }
 }
 
-.animate-marquee {
-    display: inline-block;
+.marquee-container {
+    display: inline-flex;
     white-space: nowrap;
-    animation: musicPlayerMarquee 8s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+    animation: musicPlayerMarquee 9s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+    will-change: transform;
 }
-
         /* Плавная вертикальная анимация смены этапов */
 .step-transition {
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1329,25 +1329,20 @@ const DB_NODE_NAME = 'reports_vladimir';
             } else {
                 if (footerCloseBtn) footerCloseBtn.classList.add('hidden');
 
-                const rule = rulesList[activeRuleIndex];
+               const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 20) {
-                        // Оборачиваем оригинал в спан и дублируем его рядом без лишних неразрывных пробелов
-                        titleEl.innerHTML = `<span class="marquee-text">${rule.title}</span><span style="margin-left: 40px;">${rule.title}</span>`;
-                        titleEl.className = "block animate-marquee overflow-hidden";
-                        
-                        // Точно вычисляем ширину первого элемента через JS, чтобы движение было до миллиметра
-                        requestAnimationFrame(() => {
-                            const firstSpan = titleEl.querySelector('.marquee-text');
-                            if (firstSpan) {
-                                const textWidth = firstSpan.offsetWidth + 40; // ширина текста + наш отступ в 40px
-                                titleEl.style.setProperty('--scroll-distance', `-${textWidth}px`);
-                            }
-                        });
+                        // Оборачиваем в контейнер-обертку со скрытием переполнения и принудительным выравниванием по левому краю
+                        titleEl.className = "block overflow-hidden relative text-left";
+                        titleEl.innerHTML = `
+                            <div class="marquee-container">
+                                <span class="inline-block text-left">${rule.title}</span>
+                                <span class="inline-block text-left" style="padding-left: 50px;">${rule.title}</span>
+                            </div>
+                        `;
                     } else {
                         titleEl.innerText = rule.title;
-                        titleEl.className = "block truncate";
-                        titleEl.style.removeProperty('--scroll-distance');
+                        titleEl.className = "block truncate text-left";
                     }
                 }
 
