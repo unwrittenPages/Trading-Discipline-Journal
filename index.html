@@ -1345,12 +1345,14 @@ const rule = rulesList[activeRuleIndex];
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
                         titleEl.innerHTML = `<span class="rule-marquee-text"><span class="inline-block marquee-item-1">${rule.title}</span><span class="inline-block" style="padding-left: 60px;">${rule.title}</span></span>`;
                         
-                        // Точно вычисляем расстояние: ширина текста + отступ 60px + еще 1rem (16px) за контейнер
+                       // Точно вычисляем расстояние
                         requestAnimationFrame(() => {
                             const firstItem = titleEl.querySelector('.marquee-item-1');
                             const wrapper = titleEl.querySelector('.rule-marquee-text');
                             if (firstItem && wrapper) {
-                                const totalDist = firstItem.offsetWidth + 60; // 60px отступ 
+                                // Добавляем небольшой запас компенсации (+ 4 пикселя), 
+                                // чтобы блок проезжал ровно до конца и не останавливался раньше времени
+                                const totalDist = firstItem.offsetWidth + 60 + 16 + 4; 
                                 wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
                             }
                         });
