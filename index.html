@@ -1343,21 +1343,21 @@ const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 30) {
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
-                        titleEl.innerHTML = `<span class="rule-marquee-text"><span class="inline-block marquee-item-1">${rule.title}</span><span class="inline-block" style="padding-left: 60px;">${rule.title}</span></span>`;
+                        // Оставляем монолитную строку без лишних пробелов
+                        titleEl.innerHTML = `<span class="rule-marquee-text"><span class="inline-block marquee-item-1">${rule.title}</span><span class="inline-block marquee-item-2" style="padding-left: 60px;">${rule.title}</span></span>`;
                         
-                       // Точно вычисляем расстояние
+                        // Точный расчет: сдвигаем ровно на длину первого блока + его отступ (те самые 529px, которые ты нашел)
                         requestAnimationFrame(() => {
                             const firstItem = titleEl.querySelector('.marquee-item-1');
                             const wrapper = titleEl.querySelector('.rule-marquee-text');
                             if (firstItem && wrapper) {
-                                // Добавляем небольшой запас компенсации (+ 4 пикселя), 
-                                // чтобы блок проезжал ровно до конца и не останавливался раньше времени
-                                const totalDist = firstItem.offsetWidth + 60 + 16 + 4; 
+                                // Ширина первого текста + 60px отступа, заложенного во второй элемент
+                                const totalDist = firstItem.offsetWidth + 60; 
                                 wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
                             }
                         });
                     } else {
-                        // Короткие заголовки (до 30 символов) выводятся статично без анимации
+                        // Короткие заголовки выводятся статично без анимации
                         titleEl.className = "block text-left w-full truncate";
                         titleEl.innerText = rule.title;
                     }
