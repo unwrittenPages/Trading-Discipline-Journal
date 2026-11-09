@@ -1350,7 +1350,7 @@ const rule = rulesList[activeRuleIndex];
                             const firstItem = titleEl.querySelector('.marquee-item-1');
                             const wrapper = titleEl.querySelector('.rule-marquee-text');
                             if (firstItem && wrapper) {
-                                const totalDist = firstItem.offsetWidth + 60 + 16; // 60px отступ + 16px (1rem) вынос за контейнер
+                                const totalDist = firstItem.offsetWidth + 60 + 1; // 60px отступ + 16px (1rem) вынос за контейнер
                                 wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
                             }
                         });
