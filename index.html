@@ -278,15 +278,19 @@
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
 
-        @keyframes marqueeScroll {
-    0%, 15% { transform: translateX(0); }
-    85%, 100% { transform: translateX(calc(-100% + 200px)); } /* Подстраивается под длину текста */
+        @keyframes musicPlayerMarquee {
+    0%, 15% {
+        transform: translateX(0); /* Пауза в самом начале (примерно 1.2 секунды) */
+    }
+    85%, 100% {
+        transform: translateX(-50%); /* Плавное прокручивание до конца текста */
+    }
 }
 
 .animate-marquee {
     display: inline-block;
     white-space: nowrap;
-    animation: marqueeScroll 8s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+    animation: musicPlayerMarquee 8s cubic-bezier(0.37, 0, 0.63, 1) infinite;
 }
 
         /* Плавная вертикальная анимация смены этапов */
@@ -1327,10 +1331,12 @@ const DB_NODE_NAME = 'reports_vladimir';
 
                 const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
-                    titleEl.innerText = rule.title;
-                    if (rule.title.length > 25) {
+                    if (rule.title.length > 20) {
+                        // Дублируем текст для идеального бесшовного кольцевого скролла, как в плеере
+                        titleEl.innerHTML = `${rule.title} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${rule.title}`;
                         titleEl.className = "block animate-marquee";
                     } else {
+                        titleEl.innerText = rule.title;
                         titleEl.className = "block truncate";
                     }
                 }
