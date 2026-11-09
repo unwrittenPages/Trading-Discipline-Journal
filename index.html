@@ -277,8 +277,7 @@
             color: #fb7185 !important; /* rose-400 */
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
-
-  /* Контейнер обрезает всё, что не влезает */
+/* Контейнер ограничивает видимость и прячет всё, что не помещается по бокам */
 .rule-marquee-container {
     width: 100%;
     overflow: hidden;
@@ -286,19 +285,20 @@
     box-sizing: border-box;
 }
 
-/* Запуск анимации движения */
+/* Стили заголовка и запуск покачивания туда-обратно */
 .rule-marquee-text {
     display: inline-block;
-    padding-left: 0px; /* Стартует строго с левого края */
-    animation: simpleMarquee 12s linear infinite;
+    animation: scroll-back-and-forth 10s ease-in-out alternate infinite;
 }
 
-@keyframes simpleMarquee {
+@keyframes scroll-back-and-forth {
     0%, 15% {
-        transform: translateX(0%); /* Пауза в начале */
+        /* Стартуем строго с нуля (текст стоит в самом начале, слева) с паузой для чтения */
+        transform: translateX(0);
     }
-    100% {
-        transform: translateX(-50%); /* Движение */
+    85%, 100% {
+        /* Сдвигаем текст влево на всю его длину за вычетом ширины контейнера модалки */
+        transform: translateX(calc(-100% + 100%));
     }
 }
         /* Плавная вертикальная анимация смены этапов */
@@ -1340,15 +1340,11 @@ const DB_NODE_NAME = 'reports_vladimir';
              const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 20) {
-                        // Оборачиваем в двойной спан для идеального бесшовного цикла с -50%
+                        // Длинный заголовок: применяем контейнер и класс движения туда-обратно
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
-                        titleEl.innerHTML = `
-                            <span class="rule-marquee-text">
-                                <span class="inline-block text-left">${rule.title}</span>
-                                <span class="inline-block text-left" style="padding-left: 50px;">${rule.title}</span>
-                            </span>
-                        `;
+                        titleEl.innerHTML = `<span class="rule-marquee-text">${rule.title}</span>`;
                     } else {
+                        // Короткий заголовок: выводим как есть по центру или слева без анимации
                         titleEl.className = "block text-left w-full";
                         titleEl.innerText = rule.title;
                     }
