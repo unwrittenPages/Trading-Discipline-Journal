@@ -278,7 +278,7 @@
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
 
-    /* Контейнер ограничивает видимость и прячет всё, что выходит за рамки */
+   /* Контейнер обрезает всё, что не влезает */
 .rule-marquee-container {
     width: 100%;
     overflow: hidden;
@@ -286,20 +286,21 @@
     box-sizing: border-box;
 }
 
-/* Заголовок и запуск анимации */
+/* Заголовок стартует с нуля и плавно качается туда-обратно */
 .rule-marquee-text {
     display: inline-block;
-    padding-left: 100%; /* Заставляет текст стартовать строго за правым краем экрана */
-    animation: ruleScrollLeft 12s linear infinite; /* 12с — скорость движения, можно настроить */
+    /* Убираем padding-left: 100%, чтобы текст начинался сразу с левого края (с нуля) */
+    animation: rulePendulum 10s ease-in-out infinite alternate;
 }
 
-/* Траектория движения */
-@keyframes ruleScrollLeft {
-    0% {
-        transform: translate(0, 0);
+/* Траектория: от 0 до упора влево и обратно в 0 */
+@keyframes rulePendulum {
+    0%, 15% {
+        transform: translateX(0px); /* Стоит в самом начале 1-1.5 секунды */
     }
-    100% {
-        transform: translate(-100%, 0);
+    85%, 100% {
+        /* Динамически сдвигаем ровно на разницу между шириной текста и шириной контейнера */
+        transform: translateX(calc(var(--scroll-offset, 0px))); 
     }
 }
         /* Плавная вертикальная анимация смены этапов */
@@ -1341,11 +1342,24 @@ const DB_NODE_NAME = 'reports_vladimir';
              const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 20) {
-                        // Длинный заголовок: используем контейнер и классы бегущей строки
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
                         titleEl.innerHTML = `<span class="rule-marquee-text">${rule.title}</span>`;
+                        
+                        // Вычисляем точную ширину текста и контейнера для идеального возврата в 0
+                        requestAnimationFrame(() => {
+                            const container = titleEl;
+                            const textSpan = titleEl.querySelector('.rule-marquee-text');
+                            if (container && textSpan) {
+                                const overflowWidth = textSpan.offsetWidth - container.offsetWidth;
+                                // Если текст длиннее контейнера, сдвигаем ровно на величину переполнения со знаком минус
+                                if (overflowWidth > 0) {
+                                    textSpan.style.setProperty('--scroll-offset', `-${overflowWidth + 20}px`);
+                                } else {
+                                    textSpan.style.setProperty('--scroll-offset', `0px`);
+                                }
+                            }
+                        });
                     } else {
-                        // Короткий заголовок: выводим как есть без анимации
                         titleEl.className = "block text-left w-full";
                         titleEl.innerText = rule.title;
                     }
