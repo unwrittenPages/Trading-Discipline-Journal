@@ -277,28 +277,30 @@
             color: #fb7185 !important; /* rose-400 */
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
-/* Контейнер ограничивает видимость и прячет всё, что не помещается по бокам */
+/* Контейнер ограничивает видимость шапки и выравнивает текст по левому краю */
 .rule-marquee-container {
     width: 100%;
     overflow: hidden;
     white-space: nowrap;
     box-sizing: border-box;
+    text-align: left;
 }
 
-/* Стили заголовка и запуск покачивания туда-обратно */
+/* Бегущая строка: стартует строго с 0px, двигается туда-обратно */
 .rule-marquee-text {
     display: inline-block;
-    animation: scroll-back-and-forth 10s ease-in-out alternate infinite;
+    white-space: nowrap;
+    animation: scrollBackAndForth 10s ease-in-out infinite alternate;
+    will-change: transform;
 }
 
-@keyframes scroll-back-and-forth {
+@keyframes scrollBackAndForth {
     0%, 15% {
-        /* Стартуем строго с нуля (текст стоит в самом начале, слева) с паузой для чтения */
-        transform: translateX(0);
+        transform: translateX(0); /* Текст стоит в самом начале (в 0px) первые 1.5 сек */
     }
     85%, 100% {
-        /* Сдвигаем текст влево на всю его длину за вычетом ширины контейнера модалки */
-        transform: translateX(calc(-100% + 100%));
+        /* Движение влево: плавно уходит на ширину переполнения текста */
+        transform: translateX(min(0px, calc(100% - 100.1%))); 
     }
 }
         /* Плавная вертикальная анимация смены этапов */
@@ -1340,12 +1342,36 @@ const DB_NODE_NAME = 'reports_vladimir';
              const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 20) {
-                        // Длинный заголовок: применяем контейнер и класс движения туда-обратно
+                        // Для длинного заголовка включаем режим маятника (туда-обратно с 0px)
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
                         titleEl.innerHTML = `<span class="rule-marquee-text">${rule.title}</span>`;
+                        
+                        // Вычисляем точную ширину сдвига, чтобы текст доезжал ровно до своего конца
+                        requestAnimationFrame(() => {
+                            const container = titleEl;
+                            const textSpan = titleEl.querySelector('.rule-marquee-text');
+                            if (container && textSpan) {
+                                const overflowDistance = textSpan.scrollWidth - container.clientWidth;
+                                if (overflowDistance > 0) {
+                                    // Передаем точное смещение влево (в пикселях)
+                                    textSpan.style.transform = 'none';
+                                    textSpan.animate([
+                                        { transform: 'translateX(0px)', offset: 0 },
+                                        { transform: 'translateX(0px)', offset: 0.15 },
+                                        { transform: `translateX(-${overflowDistance + 10}px)`, offset: 0.85 },
+                                        { transform: `translateX(-${overflowDistance + 10}px)`, offset: 1 }
+                                    ], {
+                                        duration: 10000,
+                                        iterations: Infinite,
+                                        direction: 'alternate',
+                                        easing: 'ease-in-out'
+                                    });
+                                }
+                            }
+                        });
                     } else {
-                        // Короткий заголовок: выводим как есть по центру или слева без анимации
-                        titleEl.className = "block text-left w-full";
+                        // Короткий заголовок выводим без анимации
+                        titleEl.className = "block text-left w-full truncate";
                         titleEl.innerText = rule.title;
                     }
                 }
