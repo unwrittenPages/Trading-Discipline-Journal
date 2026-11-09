@@ -278,18 +278,19 @@
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
 
-      @keyframes musicPlayerMarquee {
+    @keyframes musicPlayerMarquee {
     0%, 15% {
-        transform: translateX(0%);
+        transform: translateX(0px);
     }
     85%, 100% {
         transform: translateX(-50%);
     }
 }
 
-.marquee-container {
-    display: inline-flex;
+.marquee-wrapper {
+    display: flex;
     white-space: nowrap;
+    width: max-content;
     animation: musicPlayerMarquee 9s cubic-bezier(0.37, 0, 0.63, 1) infinite;
     will-change: transform;
 }
@@ -1329,20 +1330,22 @@ const DB_NODE_NAME = 'reports_vladimir';
             } else {
                 if (footerCloseBtn) footerCloseBtn.classList.add('hidden');
 
-               const rule = rulesList[activeRuleIndex];
+              const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
+                    // Жестко задаем стили для шапки: сброс отступов, выравнивание по левому краю, скрытие вылетов
+                    titleEl.className = "block overflow-hidden relative text-left w-full";
+                    
                     if (rule.title.length > 20) {
-                        // Оборачиваем в контейнер-обертку со скрытием переполнения и принудительным выравниванием по левому краю
-                        titleEl.className = "block overflow-hidden relative text-left";
+                        // Длинный заголовок: запускаем бесшовную бегущую строку от самого нуля
                         titleEl.innerHTML = `
-                            <div class="marquee-container">
+                            <div class="marquee-wrapper text-left">
                                 <span class="inline-block text-left">${rule.title}</span>
-                                <span class="inline-block text-left" style="padding-left: 50px;">${rule.title}</span>
+                                <span class="inline-block text-left" style="padding-left: 60px;">${rule.title}</span>
                             </div>
                         `;
                     } else {
-                        titleEl.innerText = rule.title;
-                        titleEl.className = "block truncate text-left";
+                        // Короткий заголовок: просто выводим текст без анимации
+                        titleEl.innerHTML = `<span class="text-left">${rule.title}</span>`;
                     }
                 }
 
