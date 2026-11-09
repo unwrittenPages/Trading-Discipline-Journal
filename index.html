@@ -1343,12 +1343,10 @@ const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 30) {
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
-                        // Оставляем монолитную строку без пробелов
                         titleEl.innerHTML = `<span class="rule-marquee-text"><span class="inline-block marquee-item-1">${rule.title}</span><span class="inline-block marquee-item-2" style="padding-left: 60px;">${rule.title}</span></span>`;
                         
-                        // Вызываем отдельную функцию задания дистанции с небольшой задержкой, 
-                        // чтобы браузер успел применить стили (точно как при ручном вводе в консоли)
-                        applyMarqueeDistance(titleEl);
+                        // Вызываем нашу принудительную функцию перезаписи
+                        forceRefreshMarquee(titleEl);
 
                     } else {
                         // Короткие заголовки выводятся статично без анимации
@@ -1436,6 +1434,34 @@ function applyMarqueeDistance(containerEl) {
 
     // Запускаем с небольшой задержкой (как твой ручной ввод в консоли)
     setTimeout(() => runCalculation(), 40);
+}
+
+
+        // Функция принудительного пересчета и перезаписи сброса анимации
+function forceRefreshMarquee(titleEl) {
+    if (!titleEl) return;
+    
+    // Делаем несколько шагов с микро-задержками, чтобы поймать момент полной готовности DOM
+    setTimeout(() => {
+        const firstItem = titleEl.querySelector('.marquee-item-1');
+        const wrapper = titleEl.querySelector('.rule-marquee-text');
+        
+        if (firstItem && wrapper) {
+            // Временно отключаем анимацию, чтобы сбросить её состояние
+            wrapper.style.animation = 'none';
+            wrapper.offsetHeight; // Принудительный reflow (заставляем браузер «проглотить» сброс)
+            
+            // Вычисляем точную ширину
+            const textWidth = firstItem.offsetWidth;
+            const totalDist = textWidth + 60; // 60px отступа
+            
+            // Перезаписываем свойство
+            wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
+            
+            // Возвращаем анимацию обратно, принудительно заставляя её стартовать заново с новым значением
+            wrapper.style.animation = '';
+        }
+    }, 60);
 }
 
             
