@@ -277,29 +277,28 @@
             color: #fb7185 !important; /* rose-400 */
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
-/* Контейнер заголовка: строго по левому краю, прячет всё лишнее по бокам */
+/* Контейнер ограничивает видимость и прячет всё, что не помещается по бокам */
 .rule-marquee-container {
     width: 100%;
     overflow: hidden;
     white-space: nowrap;
     box-sizing: border-box;
-    text-align: left;
-    display: block;
 }
 
-/* Бегущая строка в стиле аудиоплеера (бесшовный цикл через -50%) */
+/* Стили заголовка и запуск покачивания туда-обратно */
 .rule-marquee-text {
     display: inline-block;
-    white-space: nowrap;
-    animation: musicPlayerMarquee 10s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+    animation: scroll-back-and-forth 10s ease-in-out alternate infinite;
 }
 
-@keyframes musicPlayerMarquee {
+@keyframes scroll-back-and-forth {
     0%, 15% {
-        transform: translateX(0); /* Пауза в самом начале для чтения */
+        /* Стартуем строго с нуля (текст стоит в самом начале, слева) с паузой для чтения */
+        transform: translateX(0);
     }
     85%, 100% {
-        transform: translateX(-50%); /* Плавное прокручивание до конца дублированного текста */
+        /* Сдвигаем текст влево на всю его длину за вычетом ширины контейнера модалки */
+        transform: translateX(calc(-100% + 100%));
     }
 }
         /* Плавная вертикальная анимация смены этапов */
@@ -748,11 +747,13 @@
 <!-- Modal Checklist for Rules & System AMD Guide -->
     <div id="rule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 hidden" data-lenis-prevent>
         <div class="glass-panel w-full max-w-2xl md:max-w-3xl lg:max-w-4xl rounded-2xl border border-brand-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl transition-all duration-300">
-           <!-- Header (свои отступы для шапки) -->
+            <!-- Header (свои отступы для шапки) -->
             <div class="flex items-center justify-between border-b border-brand-border py-4 px-5 sm:px-6 flex-shrink-0 gap-4">
-                <h3 class="font-bold text-white text-base sm:text-lg flex-1 min-w-0 overflow-hidden text-left">
-                    <span id="rule-modal-main-title" class="block truncate">Кодекс Дисциплины и Регламент AMD</span>
-                </h3>
+                <div class="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden relative">
+                    <h3 class="font-bold text-white text-base sm:text-lg flex items-center space-x-2 min-w-max">
+                        <span id="rule-modal-main-title" class="block">Кодекс Дисциплины и Регламент AMD</span>
+                    </h3>
+                </div>
 
                 <div class="flex items-center space-x-2 flex-shrink-0">
                     <div class="flex items-center space-x-1 bg-brand-dark/60 border border-brand-border rounded-lg px-1.5 py-0.5 text-xs">
@@ -1336,15 +1337,15 @@ const DB_NODE_NAME = 'reports_vladimir';
             } else {
                 if (footerCloseBtn) footerCloseBtn.classList.add('hidden');
 
-            const rule = rulesList[activeRuleIndex];
+             const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 20) {
-                        // Длинный заголовок: дублируем текст через пробелы для идеального бесшовного кольца
+                        // Длинный заголовок: применяем контейнер и класс движения туда-обратно
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
-                        titleEl.innerHTML = `<span class="rule-marquee-text">${rule.title}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${rule.title}</span>`;
+                        titleEl.innerHTML = `<span class="rule-marquee-text">${rule.title}</span>`;
                     } else {
-                        // Короткий заголовок: выводим ровно по левому краю без анимации
-                        titleEl.className = "block text-left w-full truncate";
+                        // Короткий заголовок: выводим как есть по центру или слева без анимации
+                        titleEl.className = "block text-left w-full";
                         titleEl.innerText = rule.title;
                     }
                 }
