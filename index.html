@@ -1341,7 +1341,7 @@ const DB_NODE_NAME = 'reports_vladimir';
 
 const rule = rulesList[activeRuleIndex];
 if (titleEl) {
-    if (rule.title.length > 20) {
+    if (rule.title.length > 30) {
         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
         titleEl.innerHTML = `
             <span class="rule-marquee-text">
