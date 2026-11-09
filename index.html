@@ -277,30 +277,29 @@
             color: #fb7185 !important; /* rose-400 */
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
-/* Контейнер ограничивает видимость шапки и выравнивает текст по левому краю */
+/* Контейнер шапки модалки: жестко ограничивает видимость внутри границ */
 .rule-marquee-container {
     width: 100%;
     overflow: hidden;
     white-space: nowrap;
     box-sizing: border-box;
     text-align: left;
+    display: block;
 }
 
-/* Бегущая строка: стартует строго с 0px, двигается туда-обратно */
+/* Бегущая строка (если заголовок длинный) */
 .rule-marquee-text {
     display: inline-block;
     white-space: nowrap;
-    animation: scrollBackAndForth 10s ease-in-out infinite alternate;
-    will-change: transform;
+    animation: simpleMarquee 12s linear infinite alternate;
 }
 
-@keyframes scrollBackAndForth {
+@keyframes simpleMarquee {
     0%, 15% {
-        transform: translateX(0); /* Текст стоит в самом начале (в 0px) первые 1.5 сек */
+        transform: translateX(0px); /* Старт строго от левого края (0px) с паузой */
     }
     85%, 100% {
-        /* Движение влево: плавно уходит на ширину переполнения текста */
-        transform: translateX(min(0px, calc(100% - 100.1%))); 
+        transform: translateX(-40px); /* Плавный легкий сдвиг влево, чтобы показать хвост длинного текста */
     }
 }
         /* Плавная вертикальная анимация смены этапов */
@@ -1342,35 +1341,11 @@ const DB_NODE_NAME = 'reports_vladimir';
              const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 20) {
-                        // Для длинного заголовка включаем режим маятника (туда-обратно с 0px)
+                        // Длинный заголовок: используем контейнер и мягкое движение
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
                         titleEl.innerHTML = `<span class="rule-marquee-text">${rule.title}</span>`;
-                        
-                        // Вычисляем точную ширину сдвига, чтобы текст доезжал ровно до своего конца
-                        requestAnimationFrame(() => {
-                            const container = titleEl;
-                            const textSpan = titleEl.querySelector('.rule-marquee-text');
-                            if (container && textSpan) {
-                                const overflowDistance = textSpan.scrollWidth - container.clientWidth;
-                                if (overflowDistance > 0) {
-                                    // Передаем точное смещение влево (в пикселях)
-                                    textSpan.style.transform = 'none';
-                                    textSpan.animate([
-                                        { transform: 'translateX(0px)', offset: 0 },
-                                        { transform: 'translateX(0px)', offset: 0.15 },
-                                        { transform: `translateX(-${overflowDistance + 10}px)`, offset: 0.85 },
-                                        { transform: `translateX(-${overflowDistance + 10}px)`, offset: 1 }
-                                    ], {
-                                        duration: 10000,
-                                        iterations: Infinite,
-                                        direction: 'alternate',
-                                        easing: 'ease-in-out'
-                                    });
-                                }
-                            }
-                        });
                     } else {
-                        // Короткий заголовок выводим без анимации
+                        // Короткий заголовок: выводим ровно по левому краю без анимации
                         titleEl.className = "block text-left w-full truncate";
                         titleEl.innerText = rule.title;
                     }
