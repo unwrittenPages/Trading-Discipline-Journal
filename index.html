@@ -1294,7 +1294,6 @@ const DB_NODE_NAME = 'reports_vladimir';
             container.innerHTML = '';
 
             if (activeRuleIndex === null) {
-                // Главный список правил
                 if (titleEl) {
                     titleEl.innerText = `Кодекс Дисциплины и Регламент AMD`;
                     titleEl.className = "truncate block w-full";
@@ -1324,7 +1323,6 @@ const DB_NODE_NAME = 'reports_vladimir';
                     container.appendChild(btn);
                 });
             } else {
-                // Детальный просмотр этапа
                 if (footerCloseBtn) footerCloseBtn.classList.add('hidden');
 
                 const rule = rulesList[activeRuleIndex];
@@ -1337,7 +1335,6 @@ const DB_NODE_NAME = 'reports_vladimir';
                     }
                 }
 
-                // Верхняя кнопка справа — крестик, возвращающий к списку правил (а не закрывающий модалку)
                 if (topBtn && topIcon) {
                     topIcon.className = "fa-solid fa-xmark text-gray-400 group-hover:text-amber-400 transition-colors";
                     topBtn.onclick = closeRuleDetail;
@@ -1354,7 +1351,6 @@ const DB_NODE_NAME = 'reports_vladimir';
 
                 const isLastStep = (activeRuleIndex === rulesList.length - 1);
 
-                // Определение подвала этапа (кнопка перехода либо плашка прославления)
                 let stepFooterHtml = '';
                 if (isLastStep) {
                     stepFooterHtml = `
@@ -1392,6 +1388,9 @@ const DB_NODE_NAME = 'reports_vladimir';
                     detailDiv.classList.remove('slide-in');
                 }, 50);
             }
+        }
+
+       
 
             
         // Функция для плавной вертикальной смены этапов кодекса
