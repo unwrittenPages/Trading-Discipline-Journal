@@ -1345,20 +1345,16 @@ const rule = rulesList[activeRuleIndex];
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
                         titleEl.innerHTML = `<span class="rule-marquee-text"><span class="inline-block marquee-item-1">${rule.title}</span><span class="inline-block marquee-item-2" style="padding-left: 60px;">${rule.title}</span></span>`;
                         
-                        // Используем двойной rAF, чтобы замер происходил СТРОГО после завершения отрисовки шрифтов и модалки
-                        requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                                const firstItem = titleEl.querySelector('.marquee-item-1');
-                                const wrapper = titleEl.querySelector('.rule-marquee-text');
-                                if (firstItem && wrapper) {
-                                    // Берем чистую ширину первого элемента и прибавляем отступ 60px
-                                    const totalDist = firstItem.offsetWidth + 60; 
-                                    wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
-                                }
-                            });
-                        });
+                        // ИСПОЛЬЗУЕМ setTimeout, чтобы дать браузеру время полностью отрисовать стили модалки и шрифта Inter
+                        setTimeout(() => {
+                            const firstItem = titleEl.querySelector('.marquee-item-1');
+                            const wrapper = titleEl.querySelector('.rule-marquee-text');
+                            if (firstItem && wrapper) {
+                                const totalDist = firstItem.offsetWidth + 60; 
+                                wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
+                            }
+                        }, 50); // 50 миллисекунд гарантируют, что DOM и шрифты полностью готовы
                     } else {
-                        // Короткие заголовки выводятся статично без анимации
                         titleEl.className = "block text-left w-full truncate";
                         titleEl.innerText = rule.title;
                     }
