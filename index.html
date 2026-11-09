@@ -287,11 +287,11 @@
     display: block;
 }
 
-/* Бегущая строка в стиле аудиоплеера (бесшовный цикл через -50%) */
+/* Бегущая строка (бесшовный кольцевой цикл) */
 .rule-marquee-text {
     display: inline-block;
     white-space: nowrap;
-    animation: musicPlayerMarquee 10s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+    animation: musicPlayerMarquee 12s cubic-bezier(0.37, 0, 0.63, 1) infinite;
 }
 
 @keyframes musicPlayerMarquee {
@@ -299,7 +299,7 @@
         transform: translateX(0); /* Пауза в самом начале для чтения */
     }
     85%, 100% {
-        transform: translateX(-50%); /* Плавное прокручивание до конца дублированного текста */
+        transform: translateX(-50%); /* Плавное прокручивание ровно до половины */
     }
 }
         /* Плавная вертикальная анимация смены этапов */
@@ -1335,20 +1335,22 @@ const DB_NODE_NAME = 'reports_vladimir';
                 });
             } else {
                 if (footerCloseBtn) footerCloseBtn.classList.add('hidden');
-
-            const rule = rulesList[activeRuleIndex];
+const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     if (rule.title.length > 20) {
-                        // Длинный заголовок: дублируем текст через пробелы для идеального бесшовного кольца
+                        // Длинный заголовок: используем два независимых блока с отступом через CSS
                         titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
-                        titleEl.innerHTML = `<span class="rule-marquee-text">${rule.title}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${rule.title}</span>`;
+                        titleEl.innerHTML = `
+                            <span class="rule-marquee-text">
+                                <span class="inline-block">${rule.title}</span><span class="inline-block" style="padding-left: 60px;">${rule.title}</span>
+                            </span>
+                        `;
                     } else {
                         // Короткий заголовок: выводим ровно по левому краю без анимации
                         titleEl.className = "block text-left w-full truncate";
                         titleEl.innerText = rule.title;
                     }
                 }
-
                 if (topBtn && topIcon) {
                     topIcon.className = "fa-solid fa-xmark text-gray-400 group-hover:text-amber-400 transition-colors";
                     topBtn.onclick = closeRuleDetail;
