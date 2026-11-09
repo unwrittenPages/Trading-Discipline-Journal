@@ -277,7 +277,7 @@
             color: #fb7185 !important; /* rose-400 */
             filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.6));
         }
-/* Контейнер заголовка: строго по левому краю, прячет всё лишнее по бокам */
+/* Контейнер шапки модалки */
 .rule-marquee-container {
     width: 100%;
     overflow: hidden;
@@ -285,9 +285,11 @@
     box-sizing: border-box;
     text-align: left;
     display: block;
+    margin: 0;
+    padding: 0;
 }
 
-/* Бегущая строка (бесшовный кольцевой цикл) */
+/* Бегущая строка */
 .rule-marquee-text {
     display: inline-block;
     white-space: nowrap;
@@ -296,10 +298,11 @@
 
 @keyframes musicPlayerMarquee {
     0%, 15% {
-        transform: translateX(0); /* Пауза в самом начале для чтения */
+        transform: translateX(0); /* Пауза в начале для чтения */
     }
     85%, 100% {
-        transform: translateX(-50%); /* Плавное прокручивание ровно до половины */
+        /* Сдвигаем ровно на ширину первого блока + отступ (чтобы он ушел целиком) */
+        transform: translateX(var(--scroll-distance, -50%)); 
     }
 }
         /* Плавная вертикальная анимация смены этапов */
@@ -1335,22 +1338,32 @@ const DB_NODE_NAME = 'reports_vladimir';
                 });
             } else {
                 if (footerCloseBtn) footerCloseBtn.classList.add('hidden');
+
 const rule = rulesList[activeRuleIndex];
-                if (titleEl) {
-                    if (rule.title.length > 20) {
-                        // Длинный заголовок: используем два независимых блока с отступом через CSS
-                        titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
-                        titleEl.innerHTML = `
-                            <span class="rule-marquee-text">
-                                <span class="inline-block">${rule.title}</span><span class="inline-block" style="padding-left: 60px;">${rule.title}</span>
-                            </span>
-                        `;
-                    } else {
-                        // Короткий заголовок: выводим ровно по левому краю без анимации
-                        titleEl.className = "block text-left w-full truncate";
-                        titleEl.innerText = rule.title;
-                    }
-                }
+if (titleEl) {
+    if (rule.title.length > 20) {
+        titleEl.className = "block overflow-hidden relative w-full text-left rule-marquee-container";
+        titleEl.innerHTML = `
+            <span class="rule-marquee-text">
+                <span class="inline-block marquee-item-1">${rule.title}</span><span class="inline-block" style="padding-left: 60px;">${rule.title}</span>
+            </span>
+        `;
+        
+        // Точно вычисляем расстояние, чтобы первый блок с отступом ушел целиком
+        requestAnimationFrame(() => {
+            const firstItem = titleEl.querySelector('.marquee-item-1');
+            const wrapper = titleEl.querySelector('.rule-marquee-text');
+            if (firstItem && wrapper) {
+                const totalDist = firstItem.offsetWidth + 60; // ширина первого текста + полный отступ
+                wrapper.style.setProperty('--scroll-distance', `-${totalDist}px`);
+            }
+        });
+    } else {
+        titleEl.className = "block text-left w-full truncate";
+        titleEl.innerText = rule.title;
+    }
+}
+                
                 if (topBtn && topIcon) {
                     topIcon.className = "fa-solid fa-xmark text-gray-400 group-hover:text-amber-400 transition-colors";
                     topBtn.onclick = closeRuleDetail;
