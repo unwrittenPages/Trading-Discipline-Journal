@@ -288,6 +288,21 @@
     white-space: nowrap;
     animation: marqueeScroll 8s cubic-bezier(0.37, 0, 0.63, 1) infinite;
 }
+
+        /* Плавная вертикальная анимация смены этапов */
+.step-transition {
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateY(0);
+    opacity: 1;
+}
+.step-transition.slide-out {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+.step-transition.slide-in {
+    opacity: 0;
+    transform: translateY(20px);
+}
     </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -1279,7 +1294,7 @@ const DB_NODE_NAME = 'reports_vladimir';
             container.innerHTML = '';
 
             if (activeRuleIndex === null) {
-                // Главный список
+                // Главный список правил
                 if (titleEl) {
                     titleEl.innerText = `Кодекс Дисциплины и Регламент AMD`;
                     titleEl.className = "truncate block w-full";
@@ -1294,7 +1309,6 @@ const DB_NODE_NAME = 'reports_vladimir';
 
                 rulesList.forEach((rule, idx) => {
                     const btn = document.createElement('div');
-                    // Добавили relative hover:z-20, чтобы карточка при наведении и подъеме перекрывала соседей
                     btn.className = "glass-card p-3.5 mx-2 sm:mx-3 rounded-xl border border-brand-border hover:border-amber-400/50 cursor-pointer transition flex items-center justify-between font-medium group relative hover:z-20";
                     btn.innerHTML = `
                         <div class="flex items-center space-x-2 min-w-0 pr-2">
@@ -1310,43 +1324,92 @@ const DB_NODE_NAME = 'reports_vladimir';
                     container.appendChild(btn);
                 });
             } else {
-                // Режим детализации
+                // Детальный просмотр этапа
                 if (footerCloseBtn) footerCloseBtn.classList.add('hidden');
 
                 const rule = rulesList[activeRuleIndex];
                 if (titleEl) {
                     titleEl.innerText = rule.title;
-                    // Если текст длинный, включаем анимацию бегущей строки для мобилок
                     if (rule.title.length > 25) {
                         titleEl.className = "block animate-marquee";
                     } else {
                         titleEl.className = "block truncate";
                     }
                 }
-                 
 
-                // Настраиваем верхнюю кнопку на стрелочку вправо (серая, при наведении — золотая)
+                // Верхняя кнопка справа — крестик для закрытия модалки
                 if (topBtn && topIcon) {
-                    topIcon.className = "fa-solid fa-arrow-right text-gray-400 group-hover:text-amber-400 transition-colors";
-                    topBtn.onclick = closeRuleDetail;
-                    topBtn.title = "Назад к списку";
+                    topIcon.className = "fa-solid fa-xmark text-gray-400 group-hover:text-amber-400 transition-colors";
+                    topBtn.onclick = toggleRuleModal;
+                    topBtn.title = "Закрыть";
                 }
 
                 const detailDiv = document.createElement('div');
-                detailDiv.className = "space-y-4 relative p-1";
+                detailDiv.className = "space-y-4 relative p-1 step-transition slide-in";
 
                 const formattedContent = rule.content.split('\n').map(line => {
                     const parsedLine = formatMarkdownText(line);
                     return `<p class="leading-relaxed text-gray-300">${parsedLine}</p>`;
                 }).join('');
 
+                const isLastStep = (activeRuleIndex === rulesList.length - 1);
+
+                // Определение подвала этапа (кнопка перехода либо плашка прославления)
+                let stepFooterHtml = '';
+                if (isLastStep) {
+                    stepFooterHtml = `
+                        <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start space-x-3 text-xs text-gray-300 leading-relaxed mt-4">
+                            <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm border border-amber-500/30 shrink-0 mt-0.5">
+                                <i class="fa-solid fa-shield-heart"></i>
+                            </div>
+                            <div>
+                                <span class="font-bold text-amber-300 block mb-0.5">Слава Господу за этот регламент и за Его водительство!</span>
+                                Пусть эти правила хранят твой разум от азарта и спешки, а Божья рука будет твоими глазами и твоей рукой у терминала.
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    stepFooterHtml = `
+                        <div class="pt-4 flex justify-end">
+                            <button onclick="goToNextRuleStep()" class="text-xs bg-amber-500 hover:bg-amber-400 text-black font-bold px-4 py-2.5 rounded-xl flex items-center space-x-2 transition shadow-lg shadow-amber-500/10">
+                                <span>Перейти к следующему этапу</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+
                 detailDiv.innerHTML = `
                     <div class="space-y-2.5 bg-brand-dark/40 p-4 rounded-xl border border-brand-border/60">
                         ${formattedContent}
                     </div>
+                    ${stepFooterHtml}
                 `;
+                
                 container.appendChild(detailDiv);
+
+                setTimeout(() => {
+                    detailDiv.classList.remove('slide-in');
+                }, 50);
             }
+        }
+
+        // Функция для плавной вертикальной смены этапов кодекса
+        function goToNextRuleStep() {
+            const container = document.getElementById('rule-modal-content-container');
+            const currentDetail = container.querySelector('.step-transition');
+            
+            if (currentDetail) {
+                currentDetail.classList.add('slide-out');
+            }
+
+            setTimeout(() => {
+                if (activeRuleIndex !== null && activeRuleIndex < rulesList.length - 1) {
+                    activeRuleIndex++;
+                    renderRulesModalList();
+                    container.scrollTop = 0;
+                }
+            }, 300);
         }
 
         function closeRuleDetail() {
