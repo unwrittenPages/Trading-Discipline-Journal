@@ -1337,11 +1337,11 @@ const DB_NODE_NAME = 'reports_vladimir';
                     }
                 }
 
-                // Верхняя кнопка справа — крестик для закрытия модалки
+                // Верхняя кнопка справа — крестик, возвращающий к списку правил (а не закрывающий модалку)
                 if (topBtn && topIcon) {
                     topIcon.className = "fa-solid fa-xmark text-gray-400 group-hover:text-amber-400 transition-colors";
-                    topBtn.onclick = toggleRuleModal;
-                    topBtn.title = "Закрыть";
+                    topBtn.onclick = closeRuleDetail;
+                    topBtn.title = "Назад к списку";
                 }
 
                 const detailDiv = document.createElement('div');
@@ -1392,8 +1392,8 @@ const DB_NODE_NAME = 'reports_vladimir';
                     detailDiv.classList.remove('slide-in');
                 }, 50);
             }
-        }
 
+            
         // Функция для плавной вертикальной смены этапов кодекса
         function goToNextRuleStep() {
             const container = document.getElementById('rule-modal-content-container');
@@ -1413,9 +1413,9 @@ const DB_NODE_NAME = 'reports_vladimir';
         }
 
         function closeRuleDetail() {
-            activeRuleIndex = null;
-            renderRulesModalList();
-        }
+    activeRuleIndex = null;
+    renderRulesModalList();
+}
 
         const errorOptions = [
             "1. Внутренний настрой",
