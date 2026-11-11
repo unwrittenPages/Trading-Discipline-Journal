@@ -321,8 +321,8 @@
 }
 
         @media (max-width: 640px) {
-    /* Добавляем отступы сверху и снизу по 1rem для блока загрузки в журнале */
-    #reports-feed .glass-panel {
+    /* Отступы строго для блока загрузки, не трогая карточки отчётов */
+    #reports-feed #loading-skeleton-card {
         padding-top: 1rem !important;
         padding-bottom: 1rem !important;
         margin-top: 1rem !important;
@@ -2548,14 +2548,14 @@ function forceRefreshMarquee(titleEl) {
             // Если соединение с Firebase активно, но лента пуста и данные еще ждем, 
             // показываем анимацию загрузки в Журнале сессий
             if (isFirebaseConnected && reportsHistory.length === 0 && !window._reportsLoadedOnce) {
-                container.innerHTML = `
-                    <div class="glass-panel p-8 text-center text-amber-400 rounded-xl flex items-center justify-center space-x-3">
-                        <i class="fa-solid fa-spinner fa-spin text-xl"></i>
-                        <span class="text-xs font-medium">Загрузка журнала сессий из базы данных...</span>
-                    </div>
-                `;
-                return;
-            }
+    container.innerHTML = `
+        <div id="loading-skeleton-card" class="glass-panel p-8 text-center text-amber-400 rounded-xl flex items-center justify-center space-x-3">
+            <i class="fa-solid fa-spinner fa-spin text-xl"></i>
+            <span class="text-xs font-medium">Загрузка журнала сессий из базы данных...</span>
+        </div>
+    `;
+    return;
+}
 
             container.innerHTML = '';
             document.getElementById('reports-count').innerText = `${reportsHistory.length} записей`;
