@@ -319,6 +319,16 @@
     opacity: 0;
     transform: translateY(20px);
 }
+
+        @media (max-width: 640px) {
+    /* Добавляем отступы сверху и снизу по 1rem для блока загрузки в журнале */
+    #reports-feed .glass-panel {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+        margin-top: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+}
     </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -1149,6 +1159,9 @@
         // Имя узла в базе данных для этого сайта
 const DB_NODE_NAME = 'reports_vladimir'; 
 
+        // Вот сюда добавляем эту переменную, чтобы она была глобальной:
+let isYesterdayModeActive = false;
+
         // Пароль для досрочного разблокирования формы во время сессии (можно изменить здесь)
         const SESSION_UNLOCK_PASSWORD = '1888';
 
@@ -1521,7 +1534,10 @@ function forceRefreshMarquee(titleEl) {
 
 // Торговая сессия, проверка завершённости дня и логика 1-дневного Блока
         function initSessionTimer() {
-            const now = new Date();
+            // Еслы открыт режим ручного ввода за вчера, блокируем сброс таймером
+    if (window.isYesterdayModeActive) return;
+    
+    const now = new Date();
             const dayOfWeek = now.getDay(); // 0 - ВС, 1 - ПН, ..., 5 - ПТ, 6 - СБ
             const hours = now.getHours();
             const minutes = now.getMinutes();
@@ -2039,6 +2055,8 @@ function forceRefreshMarquee(titleEl) {
             } else {
                 saveLocally(newEntry);
             }
+            // Сбрасываем флаг режима вчерашнего дня после успешной отправки
+    isYesterdayModeActive = false;
         }
 
         function saveLocally(entry) {
@@ -4035,13 +4053,18 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(checkYesterdayButtonVisibility, 60000);
 });
 
-// Логика вызова формы за вчерашний день
+// Флаг, что мы намеренно открыли форму за вчерашний день
+let isYesterdayModeActive = false;
+
 function openYesterdayReportForm() {
     const now = new Date();
     if (now.getHours() >= 9) {
         alert('Время ввода отчёта за вчерашний день истекло (доступно только до 09:00).');
         return;
     }
+
+    // Активируем флаг ручного открытия формы за вчера
+    isYesterdayModeActive = true;
 
     // Сдвигаем дату на вчера
     let yesterdaySessionDate = new Date(now);
@@ -4054,7 +4077,7 @@ function openYesterdayReportForm() {
     if (timerCard) timerCard.classList.add('hidden');
     if (wizardContainer) wizardContainer.classList.remove('hidden');
 
-    // Перезаписываем таймстемп в reportData на вчерашний день, чтобы запись ушла в журнал как вчерашняя
+    // Сохраняем кастомный таймстемп
     reportData.customSessionTimestamp = yesterdaySessionDate.getTime();
 }
     </script>
