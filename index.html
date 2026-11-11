@@ -2100,15 +2100,21 @@ function forceRefreshMarquee(titleEl) {
                 closeDeleteModal();
             }
         });
-
-        function resetWizard() {
-            reportData = { trades: '', compliance: '', error: 'Отсутствуют', image: null, comment: '', timestamp: '' };
-            const commentInput = document.getElementById('report-comment-input');
-            if (commentInput) commentInput.value = '';
-            removeImage();
-            goToStep(1);
-            document.getElementById('reports-feed').scrollIntoView({ behavior: 'smooth' });
-        }
+function resetWizard() {
+    reportData = { trades: '', compliance: '', error: 'Отсутствуют', image: null, comment: '', timestamp: '' };
+    const commentInput = document.getElementById('report-comment-input');
+    if (commentInput) commentInput.value = '';
+    removeImage();
+    goToStep(1);
+    
+    // Исправляем прокрутку: ведем экран на самый верх совместного журнала (к счётчику записей)
+    const feedHeader = document.getElementById('reports-count');
+    if (feedHeader) {
+        const rect = feedHeader.getBoundingClientRect();
+        const absoluteTop = rect.top + window.pageYOffset - 90; // с отступом под шапку
+        smoothScrollTo(absoluteTop, 500);
+    }
+}
 
        // Плавное открытие и мягкое центрирование поля ввода
         function toggleReplyInput(id) {
