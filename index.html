@@ -447,15 +447,18 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-col sm:items-end space-y-2">
-                        <div id="session-remaining-text" class="text-xs text-gray-400 font-medium">
-                            осталось 3 ч 0 мин
-                        </div>
-                        <button onclick="openUnlockModal()" class="text-[11px] bg-brand-card hover:bg-gray-800 text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 flex items-center space-x-1.5 transition">
-                            <i class="fa-solid fa-lock-open"></i>
-                            <span>Досрочный ввод отчёта</span>
-                        </button>
-                    </div>
+                    <!-- Контейнер кнопок в правой части таймера -->
+<div class="flex items-center space-x-2">
+    <button onclick="openUnlockModal()" class="text-[11px] bg-brand-card hover:bg-gray-800 text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 flex items-center space-x-1.5 transition">
+        <i class="fa-solid fa-lock-open"></i>
+        <span>Досрочный ввод отчёта</span>
+    </button>
+
+    <!-- Новая кнопка ПС (Прошлый Сеанс / Вчера) -->
+    <button id="btn-yesterday-report" onclick="openYesterdayReportForm()" class="hidden text-[11px] bg-brand-card hover:bg-gray-800 text-amber-400 hover:text-amber-300 w-[30px] h-[30px] rounded-lg border border-amber-500/30 font-bold items-center justify-center transition" title="Ввести отчёт за вчерашний день (доступно до 09:00)">
+        ПС
+    </button>
+</div>
                 </div>
 
                <!-- Рабочая область Активной Сессии -->
@@ -2005,11 +2008,13 @@ function forceRefreshMarquee(titleEl) {
             // Умная логика даты сессии: 
             // Если отчёт отправляется рано утром (до 09:00), он относится к торговой сессии предыдущего дня.
             const now = new Date();
-            let sessionDate = new Date(now);
-            if (now.getHours() < 9) {
-                sessionDate.setDate(sessionDate.getDate() - 1);
-            }
-            const timestamp = sessionDate.getTime();
+            const timestamp = reportData.customSessionTimestamp || (() => {
+    let sessionDate = new Date(now);
+    if (now.getHours() < 9) {
+        sessionDate.setDate(sessionDate.getDate() - 1);
+    }
+    return sessionDate.getTime();
+})();
 
             const newEntry = {
                 id: timestamp,
@@ -4005,6 +4010,53 @@ function closeModal(modalId) {
                 // Добавляем класс мягкого сияния загрузки, если нужно
             });
         }
+
+        // Проверка видимости кнопки ПС в зависимости от времени (строго до 09:00 утра)
+function checkYesterdayButtonVisibility() {
+    const now = new Date();
+    const hours = now.getHours();
+    const btnPs = document.getElementById('btn-yesterday-report');
+    
+    if (!btnPs) return;
+
+    // Кнопка видна в зале ожидания до 09:00 утра
+    if (hours < 9) {
+        btnPs.classList.remove('hidden');
+        btnPs.classList.add('flex');
+    } else {
+        btnPs.classList.add('hidden');
+        btnPs.classList.remove('flex');
+    }
+}
+
+// Вызываем при загрузке и обновляем каждую минуту
+document.addEventListener('DOMContentLoaded', () => {
+    checkYesterdayButtonVisibility();
+    setInterval(checkYesterdayButtonVisibility, 60000);
+});
+
+// Логика вызова формы за вчерашний день
+function openYesterdayReportForm() {
+    const now = new Date();
+    if (now.getHours() >= 9) {
+        alert('Время ввода отчёта за вчерашний день истекло (доступно только до 09:00).');
+        return;
+    }
+
+    // Сдвигаем дату на вчера
+    let yesterdaySessionDate = new Date(now);
+    yesterdaySessionDate.setDate(yesterdaySessionDate.getDate() - 1);
+    
+    // Переводим виджет в режим заполнения формы и подменяем дату
+    const timerCard = document.getElementById('session-timer-card');
+    const wizardContainer = document.getElementById('wizard-container');
+    
+    if (timerCard) timerCard.classList.add('hidden');
+    if (wizardContainer) wizardContainer.classList.remove('hidden');
+
+    // Перезаписываем таймстемп в reportData на вчерашний день, чтобы запись ушла в журнал как вчерашняя
+    reportData.customSessionTimestamp = yesterdaySessionDate.getTime();
+}
     </script>
     
 </body>
