@@ -1878,7 +1878,7 @@ function forceRefreshMarquee(titleEl) {
 
         function switchUser(name) {
             currentUser = name;
-            localStorage.setItem('trading_journal_user', name);
+            localStorage.setItem('max_trading_journal_user', name);
             updateUserUI();
             document.getElementById('user-dropdown').classList.add('hidden');
         }
