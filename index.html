@@ -1770,7 +1770,7 @@ function forceRefreshMarquee(titleEl) {
             } else if (totalCurrentSeconds >= startSeconds && totalCurrentSeconds < endSeconds && !isUnlockedToday) {
                 // Во время сессии (09:00 - 12:00)
                 if (timerCard) timerCard.classList.remove('hidden');
-                if (wizardContainer) timerCard.classList.add('hidden');
+                if (wizardContainer) wizardContainer.classList.add('hidden');
                 if (completedCard) completedCard.classList.add('hidden');
 
                 const badgeTextEl = document.getElementById('session-badge-text');
@@ -1878,8 +1878,12 @@ function forceRefreshMarquee(titleEl) {
 
         function switchUser(name) {
             currentUser = name;
-            localStorage.setItem('max_trading_journal_user', name);
+            localStorage.setItem(USER_STORAGE_KEY, name);
             updateUserUI();
+            loadSavedChecklistState();
+            renderReportsFeed();
+            renderBacktestStats();
+            renderBacktestHistory();
             document.getElementById('user-dropdown').classList.add('hidden');
         }
 
@@ -2017,20 +2021,23 @@ function forceRefreshMarquee(titleEl) {
                 return;
             }
 
-            // Считываем необязательное уточнение
+            const quotaError = checkQuotaLimit(reportsHistory, currentUser);
+            if (quotaError) {
+                alert(quotaError);
+                return;
+            }
+
             const commentInput = document.getElementById('report-comment-input');
             const userComment = commentInput ? commentInput.value.trim() : '';
 
-            // Умная логика даты сессии: 
-            // Если отчёт отправляется рано утром (до 09:00), он относится к торговой сессии предыдущего дня.
             const now = new Date();
             const timestamp = reportData.customSessionTimestamp || (() => {
-    let sessionDate = new Date(now);
-    if (now.getHours() < 9) {
-        sessionDate.setDate(sessionDate.getDate() - 1);
-    }
-    return sessionDate.getTime();
-})();
+                let sessionDate = new Date(now);
+                if (now.getHours() < 9) {
+                    sessionDate.setDate(sessionDate.getDate() - 1);
+                }
+                return sessionDate.getTime();
+            })();
 
             const newEntry = {
                 id: timestamp,
@@ -2040,23 +2047,23 @@ function forceRefreshMarquee(titleEl) {
                 compliance: reportData.compliance,
                 error: reportData.error,
                 image: reportData.image,
-                comment: userComment, // Сохраняем комментарий
-                replies: [] // Массив для обсуждений
+                comment: userComment,
+                replies: []
             };
 
             if (isFirebaseConnected && dbRef) {
                 window.fbSDK.push(dbRef, newEntry).then(() => {
+                    isYesterdayModeActive = false;
                     resetWizard();
-                    initSessionTimer(); 
+                    initSessionTimer();
                 }).catch(err => {
                     console.error("Firebase push error:", err);
                     saveLocally(newEntry);
                 });
             } else {
                 saveLocally(newEntry);
+                isYesterdayModeActive = false;
             }
-            // Сбрасываем флаг режима вчерашнего дня после успешной отправки
-    isYesterdayModeActive = false;
         }
 
         function saveLocally(entry) {
@@ -2839,21 +2846,41 @@ function resetWizard() {
             apiKey: "AIzaSyBcJAnn1JlzPgfm1Fxd-RRGksk5YdgTjkc",
             projectId: "trading-journal-bb826"
         };
+
+        const MAX_ITEMS_PER_USER = 31;
+        const MAX_ITEMS_TOTAL = 62;
+        const USER_STORAGE_KEY = 'trading_journal_user_timur';
+        const FB_CONFIG_KEY = 'firebase_sync_config_timur';
+
+        function checkQuotaLimit(items, author) {
+            const totalCount = Array.isArray(items) ? items.length : 0;
+            const userCount = Array.isArray(items)
+                ? items.filter(item => item.author === author).length
+                : 0;
+
+            if (totalCount >= MAX_ITEMS_TOTAL) {
+                return `Достигнут общий лимит записей (${MAX_ITEMS_TOTAL} из ${MAX_ITEMS_TOTAL} на двоих). Удалите старые записи перед добавлением новых.`;
+            }
+            if (userCount >= MAX_ITEMS_PER_USER) {
+                return `Достигнут лимит записей для ${author} (${MAX_ITEMS_PER_USER} из ${MAX_ITEMS_PER_USER}). Удалите старые записи перед добавлением новых.`;
+            }
+            return null;
+        }
         
-        function loadFirebaseConfig() {
-            let savedConfig = localStorage.getItem('firebase_sync_config_max');
+      function loadFirebaseConfig() {
+            let savedConfig = localStorage.getItem(FB_CONFIG_KEY);
             if (!savedConfig) {
                 savedConfig = JSON.stringify(DEFAULT_CONFIG);
-                localStorage.setItem('firebase_sync_config_max', savedConfig);
+                localStorage.setItem(FB_CONFIG_KEY, savedConfig);
             }
-            
+
             if (savedConfig) {
                 try {
                     const cfg = JSON.parse(savedConfig);
                     document.getElementById('fb-database-url').value = cfg.databaseURL || '';
                     document.getElementById('fb-api-key').value = cfg.apiKey || '';
                     document.getElementById('fb-project-id').value = cfg.projectId || '';
-                    
+
                     initFirebase(cfg);
                 } catch (e) {
                     fallbackToLocal();
@@ -2968,7 +2995,7 @@ function resetWizard() {
             renderReportsFeed();
         }
 
-        function saveFirebaseConfig() {
+       function saveFirebaseConfig() {
             const dbUrl = document.getElementById('fb-database-url').value.trim();
             const apiKey = document.getElementById('fb-api-key').value.trim();
             const projId = document.getElementById('fb-project-id').value.trim();
@@ -2979,19 +3006,20 @@ function resetWizard() {
             }
 
             const cfg = { databaseURL: dbUrl, apiKey: apiKey, projectId: projId };
-            localStorage.setItem('firebase_sync_config', JSON.stringify(cfg));
+            localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg));
             toggleFirebaseModal();
             location.reload();
         }
 
         function clearFirebaseConfig() {
-            localStorage.removeItem('firebase_sync_config');
+            localStorage.removeItem(FB_CONFIG_KEY);
             toggleFirebaseModal();
             fallbackToLocal();
         }
-        let backtestImageData = null;
 
-      let backtestImage1 = null;
+        
+        let backtestImageData = null;
+        let backtestImage1 = null;
         let backtestImage2 = null;
 
       function openWeekendModal() {
@@ -3441,33 +3469,11 @@ function deleteArchivedBacktest(event, id, fbKey) {
             onStepCheckboxChange(num);
         }
 
-       // Восстановление состояния чекбоксов из localStorage или Firebase
-     function loadSavedChecklistState() {
-            // Анимация загрузки в первом главном блоке («Склонность к системной торговле»)
-            const sessionStatus = document.getElementById('weekend-session-status');
-            if (sessionStatus) {
-                sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Загрузка данных из облака...</span></span>';
-            }
-
-            if (isFirebaseConnected && dbInstance) {
-                const checklistRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${currentUser}`);
-                window.fbSDK.onValue(checklistRef, (snapshot) => {
-                    const data = snapshot.val() || {};
-                    applyChecklistVisuals(data);
-                    updateWeekendProgress();
-                    renderBacktestStats();
-                }, (error) => {
-                    console.error("Firebase checklist read error:", error);
-                    updateWeekendProgress();
-                    renderBacktestStats();
-                });
-            } else {
-                // Режим localStorage
-                const saved = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
-                applyChecklistVisuals(saved);
-                updateWeekendProgress();
-                renderBacktestStats();
-            }
+    function loadSavedChecklistState() {
+            const saved = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
+            applyChecklistVisuals(saved);
+            updateWeekendProgress();
+            renderBacktestStats();
         }
 
         // Вспомогательная функция отрисовки чекбоксов, текстов и мгновенного скрытия линий таймера
