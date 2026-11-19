@@ -1156,11 +1156,7 @@
         const USER_STORAGE_KEY = 'trading_journal_user_vladimir_max';
         const FB_CONFIG_KEY = 'firebase_sync_config_vladimir_max';
 
-        const DEFAULT_CONFIG = {
-            databaseURL: "https://trading-journal-bb826-default-rtdb.firebaseio.com",
-            apiKey: "AIzaSyBcJAnn1JlzPgfm1Fxd-RRGksk5YdgTjkc",
-            projectId: "trading-journal-bb826"
-        };
+    
 
         // State variables
         let currentUser = localStorage.getItem(USER_STORAGE_KEY) || 'Vladimir';
@@ -2886,25 +2882,28 @@ function resetWizard() {
         
       function loadFirebaseConfig() {
             let savedConfig = localStorage.getItem(FB_CONFIG_KEY);
-            if (!savedConfig) {
-                savedConfig = JSON.stringify(DEFAULT_CONFIG);
-                localStorage.setItem(FB_CONFIG_KEY, savedConfig);
-            }
+            let cfg = DEFAULT_CONFIG;
 
             if (savedConfig) {
                 try {
-                    const cfg = JSON.parse(savedConfig);
-                    document.getElementById('fb-database-url').value = cfg.databaseURL || '';
-                    document.getElementById('fb-api-key').value = cfg.apiKey || '';
-                    document.getElementById('fb-project-id').value = cfg.projectId || '';
-
-                    initFirebase(cfg);
+                    const parsed = JSON.parse(savedConfig);
+                    if (parsed && parsed.databaseURL && !parsed.databaseURL.includes('timur')) {
+                        cfg = parsed;
+                    } else {
+                        localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
+                    }
                 } catch (e) {
-                    fallbackToLocal();
+                    localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
                 }
             } else {
-                fallbackToLocal();
+                localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
             }
+
+            document.getElementById('fb-database-url').value = cfg.databaseURL || '';
+            document.getElementById('fb-api-key').value = cfg.apiKey || '';
+            document.getElementById('fb-project-id').value = cfg.projectId || '';
+
+            initFirebase(cfg);
         }
 
        function initFirebase(cfg) {
