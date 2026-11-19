@@ -1884,6 +1884,8 @@ function forceRefreshMarquee(titleEl) {
             renderReportsFeed();
             renderBacktestStats();
             renderBacktestHistory();
+            checkAndTransformBacktestSection();
+            initSessionTimer();
             document.getElementById('user-dropdown').classList.add('hidden');
         }
 
@@ -2932,6 +2934,8 @@ function resetWizard() {
                     }
                     renderBacktestStats();
                     renderBacktestHistory();
+                    updateWeekendProgress();
+                    updateSaveButtonState();
                 });
 // СЛУШАТЕЛЬ ЧЕКБОКСОВ ВЫХОДНЫХ (Для Vladimir и Max)
                 ['Vladimir', 'Max'].forEach(userName => {
