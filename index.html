@@ -1146,9 +1146,29 @@
 
     <!-- App Main Script -->
     <script>
+       // Очищаем возможные старые ключи и задаём единые ключи для Vladimir и Max
+        localStorage.removeItem('trading_journal_user');
+        localStorage.removeItem('trading_journal_user_timur');
+        localStorage.removeItem('firebase_sync_config_timur');
+
+        const MAX_ITEMS_PER_USER = 31;
+        const MAX_ITEMS_TOTAL = 62;
+        const USER_STORAGE_KEY = 'trading_journal_user_vladimir_max';
+        const FB_CONFIG_KEY = 'firebase_sync_config_vladimir_max';
+
+        const DEFAULT_CONFIG = {
+            databaseURL: "https://trading-journal-bb826-default-rtdb.firebaseio.com",
+            apiKey: "AIzaSyBcJAnn1JlzPgfm1Fxd-RRGksk5YdgTjkc",
+            projectId: "trading-journal-bb826"
+        };
+
         // State variables
-        let currentUser = localStorage.getItem('trading_journal_user') || 'Vladimir';
-        let currentStep = 1;
+        let currentUser = localStorage.getItem(USER_STORAGE_KEY) || 'Vladimir';
+        if (currentUser !== 'Vladimir' && currentUser !== 'Max') {
+            currentUser = 'Vladimir';
+            localStorage.setItem(USER_STORAGE_KEY, currentUser);
+        }
+        let currentStep = 1; 
         let dbRef = null;
         let dbInstance = null;
         let isFirebaseConnected = false;
@@ -2847,12 +2867,7 @@ function resetWizard() {
             apiKey: "AIzaSyBcJAnn1JlzPgfm1Fxd-RRGksk5YdgTjkc",
             projectId: "trading-journal-bb826"
         };
-
- const MAX_ITEMS_PER_USER = 31;
-const MAX_ITEMS_TOTAL = 62;
-const USER_STORAGE_KEY = 'trading_journal_user_vladimir_max';
-const FB_CONFIG_KEY = 'firebase_sync_config_vladimir_max';
-let currentUser = localStorage.getItem(USER_STORAGE_KEY) || 'Vladimir';
+     
 
         function checkQuotaLimit(items, author) {
             const totalCount = Array.isArray(items) ? items.length : 0;
