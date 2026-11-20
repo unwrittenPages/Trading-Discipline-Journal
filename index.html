@@ -2310,7 +2310,7 @@ function resetWizard() {
                 }
             };
 
-            if (isBacktestSyncEnabled && isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
+            if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
                 const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}/${fbKey}`);
                 window.fbSDK.set(itemRef, targetReport).then(() => {
                     onSaveSuccess();
@@ -2365,7 +2365,7 @@ function resetWizard() {
                 openAccordions.push(reportId);
             }
 
-            if (isBacktestSyncEnabled && isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
+            if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
                 const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}/${fbKey}`);
                 window.fbSDK.set(itemRef, targetReport).then(() => {
                     renderReportsFeed();
@@ -2934,6 +2934,28 @@ function resetWizard() {
                     }
                 }, (listenerError) => console.error('[Firebase] reports listener cancelled:', listenerError));
 
+                // Архив бэктестов: отдельный слушатель, обработчик изолирован от остальных подписок.
+                const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
+                window.fbSDK.onValue(backtestRef, (snapshot) => {
+                    try {
+                        const data = snapshot.val();
+                        const allBacktests = data
+                            ? Object.entries(data).map(([key, val]) => ({ ...val, fbKey: key }))
+                            : [];
+                        try {
+                            localStorage.setItem('local_backtest_reports', JSON.stringify(allBacktests));
+                        } catch (storageError) {
+                            console.error('[Firebase] backtest archive could not be cached locally:', storageError);
+                        }
+                        try { renderBacktestStats(); } catch (e) { console.error('[Backtests] stats render failed:', e); }
+                        try { renderBacktestHistory(); } catch (e) { console.error('[Backtests] history render failed:', e); }
+                        try { updateWeekendProgress(); } catch (e) { console.error('[Backtests] weekend progress update failed:', e); }
+                        try { updateSaveButtonState(); } catch (e) { console.error('[Backtests] save button update failed:', e); }
+                    } catch (callbackError) {
+                        console.error('[Firebase] backtest archive callback failed:', callbackError);
+                    }
+                }, (listenerError) => console.error('[Firebase] backtest archive listener cancelled:', listenerError));
+
                 // Чек-листы обоих пользователей снова синхронизируются с облаком.
                 ['Vladimir', 'Max'].forEach(userName => {
                     const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${userName}`);
@@ -2954,13 +2976,14 @@ function resetWizard() {
                     }, (listenerError) => console.error(`[Firebase] checklist listener cancelled (${userName}):`, listenerError));
                 });
 
-                // С этого момента доступны обычные записи: отчёты, чек-листы и разблокировка.
+                // С этого момента доступны обычные записи и облачный архив бэктестов.
                 isFirebaseConnected = true;
+                isBacktestSyncEnabled = true;
                 const badge = document.getElementById('sync-status-badge');
                 if (badge) {
                     badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/35";
                     badge.innerHTML = '<i class="fa-solid fa-wifi mr-1"></i> Live Sync';
-                    badge.title = 'Отчёты, чек-листы и разблокировка синхронизируются. Архив бэктестов пока работает локально.';
+                    badge.title = 'Отчёты, чек-листы, разблокировка и архив бэктестов синхронизируются.';
                 }
 
                 // Разблокировка сессии синхронизируется между устройствами.
@@ -2978,8 +3001,8 @@ function resetWizard() {
                     }
                 }, (listenerError) => console.error('[Firebase] unlock listener cancelled:', listenerError));
 
-                window._firebaseDiagnosticMode = 'reports-checklists-unlocks';
-                console.info('[Firebase] reports, checklists and session unlock sync enabled; Base64 backtest archive remains local for this test.');
+                window._firebaseDiagnosticMode = 'full-sync-with-guarded-backtest-listener';
+                console.info('[Firebase] reports, backtests, checklists and session unlock sync enabled.');
             } catch (err) {
                 console.error("Firebase init failed:", err);
                 fallbackToLocal();
@@ -3911,7 +3934,7 @@ function handleExtraBacktest(event) {
                 setTimeout(() => renderReportsFeed(), 220);
             };
 
-            if (isBacktestSyncEnabled && isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
+            if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
                 const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}/${fbKey}`);
                 window.fbSDK.set(itemRef, targetReport).then(onDone).catch(err => {
                     console.error("Error updating reactions in Firebase:", err);
