@@ -13,7 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Используем нативную прокрутку браузера: внешний Lenis отключён для проверки стабильности -->
+    <!-- Lenis Smooth Scroll CDN -->
+<script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -1134,7 +1135,15 @@
         </div>
     </div>
 </div>
-    <!-- DIAGNOSTIC: Firebase SDK temporarily disabled; local fallback is used. -->
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        window.fbSDK = { initializeApp, getDatabase, ref, push, onValue, set, remove };
+    </script>
+
     <!-- App Main Script -->
     <script>
        // Очищаем возможные старые ключи и задаём единые ключи для Vladimir и Max
@@ -1159,6 +1168,8 @@
         let dbRef = null;
         let dbInstance = null;
         let isFirebaseConnected = false;
+        // Временный защитный флаг: синхронизация архива Base64-бэктестов отключена до отдельной проверки.
+        let isBacktestSyncEnabled = false;
         let itemToDelete = null;
         let reportsHistory = [];
         let openAccordions = [];
@@ -2299,7 +2310,7 @@ function resetWizard() {
                 }
             };
 
-            if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
+            if (isBacktestSyncEnabled && isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
                 const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}/${fbKey}`);
                 window.fbSDK.set(itemRef, targetReport).then(() => {
                     onSaveSuccess();
@@ -2354,7 +2365,7 @@ function resetWizard() {
                 openAccordions.push(reportId);
             }
 
-            if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
+            if (isBacktestSyncEnabled && isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
                 const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}/${fbKey}`);
                 window.fbSDK.set(itemRef, targetReport).then(() => {
                     renderReportsFeed();
@@ -2679,7 +2690,7 @@ function resetWizard() {
                                         </button>
                                     </div>
                                     <div class="rounded-xl overflow-hidden border border-brand-border bg-black/40 p-1 cursor-pointer" onclick="openLightbox('${item.image}')">
-                                        <img src="${item.image}" loading="lazy" decoding="async" class="w-full max-h-56 object-contain rounded-lg hover:opacity-90 transition">
+                                        <img src="${item.image}" class="w-full max-h-56 object-contain rounded-lg hover:opacity-90 transition">
                                     </div>
                                 </div>
                             </div>
@@ -2908,78 +2919,67 @@ function resetWizard() {
                 dbInstance = window.fbSDK.getDatabase(app);
                 dbRef = window.fbSDK.ref(dbInstance, DB_NODE_NAME);
 
-             // СЛУШАТЕЛЬ ОСНОВНЫХ ОТЧЁТОВ
+                // Основные отчёты: чтение и обычная облачная синхронизация.
                 window.fbSDK.onValue(dbRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        reportsHistory = Object.entries(data).map(([key, val]) => ({
-                            ...val,
-                            fbKey: key
-                        })).sort((a, b) => b.id - a.id);
-                    } else {
-                        reportsHistory = [];
+                    try {
+                        const data = snapshot.val();
+                        reportsHistory = data
+                            ? Object.entries(data).map(([key, val]) => ({ ...val, fbKey: key })).sort((a, b) => b.id - a.id)
+                            : [];
+                        window._reportsLoadedOnce = true;
+                        window._statsLoadedOnce = true;
+                        renderReportsFeed();
+                    } catch (callbackError) {
+                        console.error('[Firebase] reports callback failed:', callbackError);
                     }
-                    window._reportsLoadedOnce = true; // Флаг: журнал получен
-                    window._statsLoadedOnce = true;  // Флаг: статистика получена
-                    renderReportsFeed();
-                });
+                }, (listenerError) => console.error('[Firebase] reports listener cancelled:', listenerError));
 
-                // СЛУШАТЕЛЬ БЭКТЕСТОВ (Общая база с разделением по авторам)
-                const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
-                window.fbSDK.onValue(backtestRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        const allBacktests = Object.entries(data).map(([key, val]) => ({
-                            ...val,
-                            fbKey: key
-                        }));
-                        localStorage.setItem('local_backtest_reports', JSON.stringify(allBacktests));
-                    } else {
-                        localStorage.setItem('local_backtest_reports', JSON.stringify([]));
-                    }
-                    renderBacktestStats();
-                    renderBacktestHistory();
-                    updateWeekendProgress();
-                    updateSaveButtonState();
-                });
-// СЛУШАТЕЛЬ ЧЕКБОКСОВ ВЫХОДНЫХ (Для Vladimir и Max)
+                // Чек-листы обоих пользователей снова синхронизируются с облаком.
                 ['Vladimir', 'Max'].forEach(userName => {
                     const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${userName}`);
-                    
-                    // Показываем спиннер загрузки в главном блоке при старте
                     if (userName === currentUser) {
                         const sessionStatus = document.getElementById('weekend-session-status');
                         if (sessionStatus) {
                             sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Синхронизация с облаком...</span></span>';
                         }
                     }
-
                     window.fbSDK.onValue(checkRef, (snapshot) => {
-                        const data = snapshot.val();
-                        if (data) {
-                            localStorage.setItem(`weekend_checklist_${userName}`, JSON.stringify(data));
+                        try {
+                            const data = snapshot.val();
+                            if (data) localStorage.setItem(`weekend_checklist_${userName}`, JSON.stringify(data));
+                            if (userName === currentUser) loadSavedChecklistState();
+                        } catch (callbackError) {
+                            console.error(`[Firebase] checklist callback failed (${userName}):`, callbackError);
                         }
-                        if (userName === currentUser) {
-                            loadSavedChecklistState();
-                        }
-                    });
+                    }, (listenerError) => console.error(`[Firebase] checklist listener cancelled (${userName}):`, listenerError));
                 });
-                
+
+                // С этого момента доступны обычные записи: отчёты, чек-листы и разблокировка.
                 isFirebaseConnected = true;
                 const badge = document.getElementById('sync-status-badge');
-                badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/35";
-                badge.innerHTML = '<i class="fa-solid fa-wifi mr-1"></i> Live Sync';
+                if (badge) {
+                    badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/35";
+                    badge.innerHTML = '<i class="fa-solid fa-wifi mr-1"></i> Live Sync';
+                    badge.title = 'Отчёты, чек-листы и разблокировка синхронизируются. Архив бэктестов пока работает локально.';
+                }
 
-                // СЛУШАТЕЛЬ РАЗБЛОКИРОВКИ СЕССИИ ДЛЯ ОБОИХ УСТРОЙСТВ
+                // Разблокировка сессии синхронизируется между устройствами.
                 const now = new Date();
                 const todayKey = `session_unlocked_${now.getFullYear()}_${now.getMonth()}_${now.getDate()}`;
                 const unlockRef = window.fbSDK.ref(dbInstance, `unlocks/${todayKey}`);
                 window.fbSDK.onValue(unlockRef, (snapshot) => {
-                    if (snapshot.val() === true) {
-                        sessionStorage.setItem(todayKey, 'true');
-                        initSessionTimer();
+                    try {
+                        if (snapshot.val() === true) {
+                            sessionStorage.setItem(todayKey, 'true');
+                            initSessionTimer();
+                        }
+                    } catch (callbackError) {
+                        console.error('[Firebase] unlock callback failed:', callbackError);
                     }
-                });
+                }, (listenerError) => console.error('[Firebase] unlock listener cancelled:', listenerError));
+
+                window._firebaseDiagnosticMode = 'reports-checklists-unlocks';
+                console.info('[Firebase] reports, checklists and session unlock sync enabled; Base64 backtest archive remains local for this test.');
             } catch (err) {
                 console.error("Firebase init failed:", err);
                 fallbackToLocal();
@@ -3194,7 +3194,7 @@ function closeWeekendModal() {
 
             const timestamp = Date.now();
             
-            if (isFirebaseConnected && dbInstance) {
+            if (isBacktestSyncEnabled && isFirebaseConnected && dbInstance) {
                 const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
                 
                 let promises = [];
@@ -3294,7 +3294,7 @@ function renderBacktestStats() {
 function deleteArchivedBacktest(event, id, fbKey) {
             if (event && event.stopPropagation) event.stopPropagation();
 
-            if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
+            if (isBacktestSyncEnabled && isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
                 const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests/${fbKey}`);
                 window.fbSDK.remove(itemRef).then(() => {
                     renderBacktestStats();
@@ -3406,7 +3406,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
 
                     mainImagesHtml += `
                         <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Кликните для увеличения'}">
-                            <img src="${item.image}" loading="lazy" decoding="async" class="w-14 h-14 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-brand-border group-hover:border-amber-400'} transition shadow-md">
+                            <img src="${item.image}" class="w-14 h-14 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-brand-border group-hover:border-amber-400'} transition shadow-md">
                             <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-[8px] text-amber-300 px-1 rounded font-mono">#${idx + 1}</span>
                             ${deleteBtnHtml}
                         </div>
@@ -3425,7 +3425,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
 
                         extraImagesHtml += `
                             <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Дополнительный бэктест'}">
-                                <img src="${item.image}" loading="lazy" decoding="async" class="w-11 h-11 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-amber-500/40 group-hover:border-amber-400'} transition shadow-md">
+                                <img src="${item.image}" class="w-11 h-11 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-amber-500/40 group-hover:border-amber-400'} transition shadow-md">
                                 <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-[7px] text-amber-400 px-1 rounded font-mono">#${actualIdx + 1}</span>
                                 ${deleteBtnHtml}
                             </div>
@@ -3652,7 +3652,7 @@ function handleExtraBacktest(event) {
                 backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
                 localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
 
-                if (isFirebaseConnected && dbInstance) {
+                if (isBacktestSyncEnabled && isFirebaseConnected && dbInstance) {
                     const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
                     window.fbSDK.push(backtestRef, { id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
                 }
@@ -3911,7 +3911,7 @@ function handleExtraBacktest(event) {
                 setTimeout(() => renderReportsFeed(), 220);
             };
 
-            if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
+            if (isBacktestSyncEnabled && isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
                 const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}/${fbKey}`);
                 window.fbSDK.set(itemRef, targetReport).then(onDone).catch(err => {
                     console.error("Error updating reactions in Firebase:", err);
@@ -3937,10 +3937,26 @@ function handleExtraBacktest(event) {
             }
         });
 
-        // Нативная прокрутка вместо постоянного RAF-цикла Lenis.
-        // CSS scroll-behavior уже обеспечивает плавную прокрутку внутри нужных блоков.
-        // Переменная оставлена для совместимости с openModal/closeModal ниже.
+        // Инициализация Lenis только для десктопов (на телефонах работает нативный скролл)
         let lenis = null;
+        if (window.innerWidth > 768) {
+            lenis = new Lenis({
+                duration: 1.2,
+                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+                direction: 'vertical',
+                gestureDirection: 'vertical',
+                smooth: true,
+                mouseMultiplier: 1,
+                smoothTouch: false,
+                touchMultiplier: 2,
+            });
+
+            function raf(time) {
+                lenis.raf(time);
+                requestAnimationFrame(raf);
+            }
+            requestAnimationFrame(raf);
+        }
 
 // Универсальное открытие любой модалки с остановкой Lenis
 function openModal(modalId) {
