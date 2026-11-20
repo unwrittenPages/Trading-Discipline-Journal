@@ -13,8 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Lenis Smooth Scroll CDN -->
-<script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+    <!-- Используем нативную прокрутку браузера: внешний Lenis отключён для проверки стабильности -->
     
     <script>
         tailwind.config = {
@@ -2688,7 +2687,7 @@ function resetWizard() {
                                         </button>
                                     </div>
                                     <div class="rounded-xl overflow-hidden border border-brand-border bg-black/40 p-1 cursor-pointer" onclick="openLightbox('${item.image}')">
-                                        <img src="${item.image}" class="w-full max-h-56 object-contain rounded-lg hover:opacity-90 transition">
+                                        <img src="${item.image}" loading="lazy" decoding="async" class="w-full max-h-56 object-contain rounded-lg hover:opacity-90 transition">
                                     </div>
                                 </div>
                             </div>
@@ -3415,7 +3414,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
 
                     mainImagesHtml += `
                         <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Кликните для увеличения'}">
-                            <img src="${item.image}" class="w-14 h-14 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-brand-border group-hover:border-amber-400'} transition shadow-md">
+                            <img src="${item.image}" loading="lazy" decoding="async" class="w-14 h-14 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-brand-border group-hover:border-amber-400'} transition shadow-md">
                             <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-[8px] text-amber-300 px-1 rounded font-mono">#${idx + 1}</span>
                             ${deleteBtnHtml}
                         </div>
@@ -3434,7 +3433,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
 
                         extraImagesHtml += `
                             <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Дополнительный бэктест'}">
-                                <img src="${item.image}" class="w-11 h-11 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-amber-500/40 group-hover:border-amber-400'} transition shadow-md">
+                                <img src="${item.image}" loading="lazy" decoding="async" class="w-11 h-11 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-amber-500/40 group-hover:border-amber-400'} transition shadow-md">
                                 <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-[7px] text-amber-400 px-1 rounded font-mono">#${actualIdx + 1}</span>
                                 ${deleteBtnHtml}
                             </div>
@@ -3946,26 +3945,10 @@ function handleExtraBacktest(event) {
             }
         });
 
-        // Инициализация Lenis только для десктопов (на телефонах работает нативный скролл)
+        // Нативная прокрутка вместо постоянного RAF-цикла Lenis.
+        // CSS scroll-behavior уже обеспечивает плавную прокрутку внутри нужных блоков.
+        // Переменная оставлена для совместимости с openModal/closeModal ниже.
         let lenis = null;
-        if (window.innerWidth > 768) {
-            lenis = new Lenis({
-                duration: 1.2,
-                easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-                direction: 'vertical',
-                gestureDirection: 'vertical',
-                smooth: true,
-                mouseMultiplier: 1,
-                smoothTouch: false,
-                touchMultiplier: 2,
-            });
-
-            function raf(time) {
-                lenis.raf(time);
-                requestAnimationFrame(raf);
-            }
-            requestAnimationFrame(raf);
-        }
 
 // Универсальное открытие любой модалки с остановкой Lenis
 function openModal(modalId) {
