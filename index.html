@@ -1138,141 +1138,23 @@
 
     <!-- Firebase SDK Imports -->
     <script type="module">
-        import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        window.fbSDK = { initializeApp, getApps, getDatabase, ref, push, onValue, set, remove };
+        window.fbSDK = { initializeApp, getDatabase, ref, push, onValue, set, remove };
     </script>
 
     <!-- App Main Script -->
     <script>
-       // Очищаем возможные старые ключи и задаём единые ключи для Vladimir и Max
-        localStorage.removeItem('trading_journal_user');
-        localStorage.removeItem('trading_journal_user_timur');
-        localStorage.removeItem('firebase_sync_config_timur');
-
-        const MAX_ITEMS_PER_USER = 31;
-        const MAX_ITEMS_TOTAL = 62;
-        const USER_STORAGE_KEY = 'trading_journal_user_vladimir_max';
-        const FB_CONFIG_KEY = 'firebase_sync_config_vladimir_max';
-
-    
-
         // State variables
-        let currentUser = localStorage.getItem(USER_STORAGE_KEY) || 'Vladimir';
-        if (currentUser !== 'Vladimir' && currentUser !== 'Max') {
-            currentUser = 'Vladimir';
-            localStorage.setItem(USER_STORAGE_KEY, currentUser);
-        }
-        let currentStep = 1; 
+        let currentUser = localStorage.getItem('trading_journal_user') || 'Vladimir';
+        let currentStep = 1;
         let dbRef = null;
         let dbInstance = null;
         let isFirebaseConnected = false;
         let itemToDelete = null;
         let reportsHistory = [];
         let openAccordions = [];
-
-        // Firebase listeners are explicitly owned and released if initialization is repeated.
-        let firebaseUnsubscribers = [];
-        let firebaseConfigSignature = '';
-        let firebaseAppInstance = null;
-
-        // Cache the large archive once per localStorage version.
-        let backtestsCache = null;
-        let backtestsCacheRaw = null;
-        let backtestsCacheVersion = 0;
-        let backtestsFirebaseRaw = null;
-        let backtestHistoryRenderKey = '';
-        let backtestSaveInProgress = false;
-        let extraBacktestSaveInProgress = false;
-        const backtestImageLoadTokens = { 1: 0, 2: 0 };
-
-        function getBacktests() {
-            const raw = localStorage.getItem('local_backtest_reports') || '[]';
-            if (backtestsCache && raw === backtestsCacheRaw) return backtestsCache;
-            try {
-                const parsed = JSON.parse(raw);
-                backtestsCache = Array.isArray(parsed) ? parsed : [];
-            } catch (err) {
-                console.warn('Backtest local cache could not be parsed; keeping the in-memory copy.', err);
-                if (!backtestsCache) backtestsCache = [];
-            }
-            backtestsCacheRaw = raw;
-            backtestsCacheVersion++;
-            backtestHistoryRenderKey = '';
-            return backtestsCache;
-        }
-
-        function setBacktests(items) {
-            const next = Array.isArray(items) ? items : [];
-            const serialized = JSON.stringify(next);
-            backtestsCache = next;
-            backtestsCacheVersion++;
-            backtestHistoryRenderKey = '';
-            const currentRaw = localStorage.getItem('local_backtest_reports') || '[]';
-            if (serialized === currentRaw) {
-                backtestsCacheRaw = currentRaw;
-                return true;
-            }
-            try {
-                localStorage.setItem('local_backtest_reports', serialized);
-                backtestsCacheRaw = serialized;
-                return true;
-            } catch (err) {
-                backtestsCacheRaw = currentRaw;
-                console.warn('Backtest archive exceeds localStorage quota; Firebase remains the durable copy.', err);
-                return false;
-            }
-        }
-
-        function replaceBacktestsFromFirebase(data) {
-            const allBacktests = data
-                ? Object.entries(data).map(([key, val]) => ({ ...val, fbKey: key }))
-                : [];
-            const firebaseSerialized = JSON.stringify(allBacktests);
-            if (firebaseSerialized === backtestsFirebaseRaw) return false;
-            backtestsFirebaseRaw = firebaseSerialized;
-
-            // Preserve local-only/offline records until their IDs appear in Firebase.
-            const currentRaw = localStorage.getItem('local_backtest_reports') || '[]';
-            let localEntries = [];
-            if (backtestsCache && backtestsCacheRaw === currentRaw) {
-                localEntries = backtestsCache;
-            } else {
-                try { localEntries = JSON.parse(currentRaw) || []; } catch (_) {}
-            }
-            const cloudIds = new Set(allBacktests.map(item => String(item.id)));
-            const pendingLocal = Array.isArray(localEntries)
-                ? localEntries.filter(item => item && !item.fbKey && !cloudIds.has(String(item.id)))
-                : [];
-            const mergedBacktests = pendingLocal.concat(allBacktests);
-            const serialized = JSON.stringify(mergedBacktests);
-
-            backtestsCache = mergedBacktests;
-            backtestsCacheVersion++;
-            backtestHistoryRenderKey = '';
-            try {
-                if (serialized !== currentRaw) localStorage.setItem('local_backtest_reports', serialized);
-                backtestsCacheRaw = serialized;
-            } catch (err) {
-                backtestsCacheRaw = currentRaw;
-                console.warn('Could not persist Firebase backtest snapshot to localStorage (quota).', err);
-            }
-            return true;
-        }
-
-        let backtestRenderScheduled = false;
-        function scheduleBacktestRender() {
-            if (backtestRenderScheduled) return;
-            backtestRenderScheduled = true;
-            requestAnimationFrame(() => {
-                backtestRenderScheduled = false;
-                renderBacktestStats();
-                renderBacktestHistory();
-                updateWeekendProgress();
-                updateSaveButtonState();
-            });
-        }
 
         // Имя узла в базе данных для этого сайта
 const DB_NODE_NAME = 'reports_vladimir'; 
@@ -1376,7 +1258,7 @@ let isYesterdayModeActive = false;
             },
             {
                 title: "Этап 9: Уведомления и динамическое управление позицией",
-                content: "• <strong class=\"text-white font-semibold\">Расстановка алертов:</strong> Сразу после входа ставятся два алерта (на Stop-Loss и Take-Profit или на отложенный вход и тейк, если вход осуществлялся лимитным ордером).\n• <strong class=\"text-white font-semibold\">Следом Терминал полностью закрывается!</strong> Поэтому абсолютно не должно быть известно о том, как и сколько цена движется между лимитками.\n• <strong class=\"text-white font-semibold\">Передвижение лимиток:</strong> Лимитка стопа не подвижна. При движении против нас стоп срабатывает автоматически. Сдвигать стоп запрещено (системный убыток 1%, кроме случаев б/у). Лимитка входа должна оставаться неизменной, как и тейк.\n• <strong class=\"text-white font-semibold\">Перевод за зону безубыточности (БУЗ):</strong> Если Take-Profit выставляется на дальний исторический максимум или минимум, то при достижении ценой самого низкого/высокого экстремума за 2, максимум 3 дня Stop-Loss незамедлительно переносится за зону безубыточности. <strong class=\"text-white font-semibold\">Зона безубыточности (БУЗ) — минимум или максимум на 1-минутном таймфрейме в зоне стопа или имбаланс, который ближе всего к точке входа.</strong> Таким образом риск снижается до 20%-40% от изначального. Риск в сделке полностью обнуляется только если нету минимума или максимума в зоне стопа, или имбаланса. Таким образом безубыточная зона выступает локальным суб-структурный мин./макс. или имб. для того чтобы переставлять в логически защищенную зону.\n• <strong class=\"text-white font-semibold\">Контроль зоны фиксации:</strong> При срабатывании алерта перед тейком выполняется вход в терминал для оценки характера снятия цели.\n• <strong class=\"text-white font-semibold\">Перевод в режим удержания (Доп):</strong>\n  - Ордер не закрывается вручную, если есть потенциал движения к более высокой глобальной цели.\n  - Если 5-минутная свеча (<strong class=\"text-white font-semibold\">5m</strong>) уверенно закрывается телом за уровнем первоначальной цели, Stop-Loss переносится в плюс на отметку гарантированной прибыли <strong class=\"text-white font-semibold\">+2% от депозита</strong>.\n• <strong class=\"text-white font-semibold\">Универсальный фильтр закрепления:</strong> И для 1m, и для 5m сетапов характер пробития цели всегда оценивается строго по закрытию <strong class=\"text-white font-semibold\">5-минутной свечи (5m)</strong>.\n• <strong class=\"text-white font-semibold\">Каскадный Take-Profit:</strong> Позиция сопровождает движение дальше к следующей утвержденной структурной цели."
+                content: "• <strong class=\"text-white font-semibold\">Расстановка алертов:</strong> Сразу после входа ставятся два алерта (на Stop-Loss и Take-Profit или на отложенный вход и тейк, если вход осуществлялся лимитным ордером).\n• <strong class=\"text-white font-semibold\">Следом Терминал полностью закрывается!</strong> Поэтому абсолютно не должно быть известно о том, как и сколько цена движется между лимитками.\n• <strong class=\"text-white font-semibold\">Передвижение лимиток:</strong> Лимитка стопа не подвижна. При движении против нас стоп срабатывает автоматически. Сдвигать стоп запрещено (системный убыток 1%, кроме случаев б/у). Лимитка входа должна оставаться неизменной, как и тейк.\n• <strong class=\"text-white font-semibold\">Перевод в безубыток (Б/У):</strong> Если Take-Profit выставляется на дальний исторический максимум или минимум, то при достижении ценой самого низкого/высокого экстремума за 2, максимум 3 дня Stop-Loss незамедлительно переносится в точку безубыточности. Риск в сделке полностью обнуляется только при таких условиях. Точка безубыточности — это локальный суб-структурный мин./макс. в зоне стопа, если таковой имеется, если нет — точная котировка входа.\n• <strong class=\"text-white font-semibold\">Контроль зоны фиксации:</strong> При срабатывании алерта перед тейком выполняется вход в терминал для оценки характера снятия цели.\n• <strong class=\"text-white font-semibold\">Перевод в режим удержания (Доп):</strong>\n  - Ордер не закрывается вручную, если есть потенциал движения к более высокой глобальной цели.\n  - Если 5-минутная свеча (<strong class=\"text-white font-semibold\">5m</strong>) уверенно закрывается телом за уровнем первоначальной цели, Stop-Loss переносится в плюс на отметку гарантированной прибыли <strong class=\"text-white font-semibold\">+2% от депозита</strong>.\n• <strong class=\"text-white font-semibold\">Универсальный фильтр закрепления:</strong> И для 1m, и для 5m сетапов характер пробития цели всегда оценивается строго по закрытию <strong class=\"text-white font-semibold\">5-минутной свечи (5m)</strong>.\n• <strong class=\"text-white font-semibold\">Каскадный Take-Profit:</strong> Позиция сопровождает движение дальше к следующей утвержденной структурной цели."
             },
             {
                 title: "Этап 10: Правило перезахода после стопа",
@@ -1888,7 +1770,7 @@ function forceRefreshMarquee(titleEl) {
             } else if (totalCurrentSeconds >= startSeconds && totalCurrentSeconds < endSeconds && !isUnlockedToday) {
                 // Во время сессии (09:00 - 12:00)
                 if (timerCard) timerCard.classList.remove('hidden');
-                if (wizardContainer) wizardContainer.classList.add('hidden');
+                if (wizardContainer) timerCard.classList.add('hidden');
                 if (completedCard) completedCard.classList.add('hidden');
 
                 const badgeTextEl = document.getElementById('session-badge-text');
@@ -1996,14 +1878,8 @@ function forceRefreshMarquee(titleEl) {
 
         function switchUser(name) {
             currentUser = name;
-            localStorage.setItem(USER_STORAGE_KEY, name);
+            localStorage.setItem('trading_journal_user', name);
             updateUserUI();
-            loadSavedChecklistState();
-            renderReportsFeed();
-            renderBacktestStats();
-            renderBacktestHistory();
-            checkAndTransformBacktestSection();
-            initSessionTimer();
             document.getElementById('user-dropdown').classList.add('hidden');
         }
 
@@ -2088,7 +1964,7 @@ function forceRefreshMarquee(titleEl) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const maxDim = 1800; 
+                    const maxDim = 2500; 
                     let width = img.width;
                     let height = img.height;
 
@@ -2105,7 +1981,7 @@ function forceRefreshMarquee(titleEl) {
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+                    const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
                     reportData.image = resizedDataUrl;
 
                     document.getElementById('preview-img').src = resizedDataUrl;
@@ -2141,23 +2017,20 @@ function forceRefreshMarquee(titleEl) {
                 return;
             }
 
-            const quotaError = checkQuotaLimit(reportsHistory, currentUser);
-            if (quotaError) {
-                alert(quotaError);
-                return;
-            }
-
+            // Считываем необязательное уточнение
             const commentInput = document.getElementById('report-comment-input');
             const userComment = commentInput ? commentInput.value.trim() : '';
 
+            // Умная логика даты сессии: 
+            // Если отчёт отправляется рано утром (до 09:00), он относится к торговой сессии предыдущего дня.
             const now = new Date();
             const timestamp = reportData.customSessionTimestamp || (() => {
-                let sessionDate = new Date(now);
-                if (now.getHours() < 9) {
-                    sessionDate.setDate(sessionDate.getDate() - 1);
-                }
-                return sessionDate.getTime();
-            })();
+    let sessionDate = new Date(now);
+    if (now.getHours() < 9) {
+        sessionDate.setDate(sessionDate.getDate() - 1);
+    }
+    return sessionDate.getTime();
+})();
 
             const newEntry = {
                 id: timestamp,
@@ -2167,23 +2040,23 @@ function forceRefreshMarquee(titleEl) {
                 compliance: reportData.compliance,
                 error: reportData.error,
                 image: reportData.image,
-                comment: userComment,
-                replies: []
+                comment: userComment, // Сохраняем комментарий
+                replies: [] // Массив для обсуждений
             };
 
             if (isFirebaseConnected && dbRef) {
                 window.fbSDK.push(dbRef, newEntry).then(() => {
-                    isYesterdayModeActive = false;
                     resetWizard();
-                    initSessionTimer();
+                    initSessionTimer(); 
                 }).catch(err => {
                     console.error("Firebase push error:", err);
                     saveLocally(newEntry);
                 });
             } else {
                 saveLocally(newEntry);
-                isYesterdayModeActive = false;
             }
+            // Сбрасываем флаг режима вчерашнего дня после успешной отправки
+    isYesterdayModeActive = false;
         }
 
         function saveLocally(entry) {
@@ -2479,19 +2352,6 @@ function resetWizard() {
             }
         }
 
-        function getThisWeekMonday9AM(date) {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diffToMonday));
-    monday.setHours(9, 0, 0, 0);
-
-    if (date < monday) {
-        monday.setDate(monday.getDate() - 7);
-    }
-    return monday;
-}
-
       // Функция расчета и рендеринга склонности к системной торговле за текущую неделю
         function updateMonthlyStats() {
             const gridContainer = document.getElementById('monthly-stats-grid');
@@ -2508,6 +2368,20 @@ function resetWizard() {
             }
 
             const now = new Date();
+            
+            // Вычисляем начало текущей недели (Понедельник 09:00 утра)
+            function getThisWeekMonday9AM(date) {
+                const d = new Date(date);
+                const day = d.getDay();
+                const diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1);
+                const monday = new Date(d.setDate(diffToMonday));
+                monday.setHours(9, 0, 0, 0);
+                
+                if (date < monday) {
+                    monday.setDate(monday.getDate() - 7);
+                }
+                return monday;
+            }
 
             const weekStart = getThisWeekMonday9AM(now);
             const weekStartTime = weekStart.getTime();
@@ -2523,7 +2397,7 @@ function resetWizard() {
                 .sort((a, b) => a.id - b.id);
             
             // Проверяем бэктесты за выходные (скриншот + пройденные чекбоксы)
-            const backtests = getBacktests();
+            const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             const weekendBacktests = backtests.filter(item => item.id >= weekStartTime);
 
             let stats = {
@@ -2961,51 +2835,32 @@ function resetWizard() {
 
         // Вшитые настройки для автоматической синхронизации с братом
         const DEFAULT_CONFIG = {
-            databaseURL: "https://trading-journal-bb826-default-rtdb.firebaseio.com",
+            databaseURL: "https://trading-journal-bb826-default-rtdb.firebaseio.com/",
             apiKey: "AIzaSyBcJAnn1JlzPgfm1Fxd-RRGksk5YdgTjkc",
             projectId: "trading-journal-bb826"
         };
-     
-
-        function checkQuotaLimit(items, author) {
-            const totalCount = Array.isArray(items) ? items.length : 0;
-            const userCount = Array.isArray(items)
-                ? items.filter(item => item.author === author).length
-                : 0;
-
-            if (totalCount >= MAX_ITEMS_TOTAL) {
-                return `Достигнут общий лимит записей (${MAX_ITEMS_TOTAL} из ${MAX_ITEMS_TOTAL} на двоих). Удалите старые записи перед добавлением новых.`;
-            }
-            if (userCount >= MAX_ITEMS_PER_USER) {
-                return `Достигнут лимит записей для ${author} (${MAX_ITEMS_PER_USER} из ${MAX_ITEMS_PER_USER}). Удалите старые записи перед добавлением новых.`;
-            }
-            return null;
-        }
         
-      function loadFirebaseConfig() {
-            let savedConfig = localStorage.getItem(FB_CONFIG_KEY);
-            let cfg = DEFAULT_CONFIG;
-
+        function loadFirebaseConfig() {
+            let savedConfig = localStorage.getItem('firebase_sync_config_max');
+            if (!savedConfig) {
+                savedConfig = JSON.stringify(DEFAULT_CONFIG);
+                localStorage.setItem('firebase_sync_config_max', savedConfig);
+            }
+            
             if (savedConfig) {
                 try {
-                    const parsed = JSON.parse(savedConfig);
-                    if (parsed && parsed.databaseURL && !parsed.databaseURL.includes('timur')) {
-                        cfg = parsed;
-                    } else {
-                        localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
-                    }
+                    const cfg = JSON.parse(savedConfig);
+                    document.getElementById('fb-database-url').value = cfg.databaseURL || '';
+                    document.getElementById('fb-api-key').value = cfg.apiKey || '';
+                    document.getElementById('fb-project-id').value = cfg.projectId || '';
+                    
+                    initFirebase(cfg);
                 } catch (e) {
-                    localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
+                    fallbackToLocal();
                 }
             } else {
-                localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(DEFAULT_CONFIG));
+                fallbackToLocal();
             }
-
-            document.getElementById('fb-database-url').value = cfg.databaseURL || '';
-            document.getElementById('fb-api-key').value = cfg.apiKey || '';
-            document.getElementById('fb-project-id').value = cfg.projectId || '';
-
-            initFirebase(cfg);
         }
 
        function initFirebase(cfg) {
@@ -3014,113 +2869,93 @@ function resetWizard() {
                 return;
             }
 
-            const nextSignature = JSON.stringify({
-                databaseURL: cfg.databaseURL,
-                apiKey: cfg.apiKey || '',
-                projectId: cfg.projectId || ''
-            });
-            if (isFirebaseConnected && dbInstance && firebaseConfigSignature === nextSignature) return;
-
-            firebaseUnsubscribers.forEach(unsubscribe => {
-                try { if (typeof unsubscribe === 'function') unsubscribe(); } catch (err) {
-                    console.warn('Firebase listener cleanup failed:', err);
-                }
-            });
-            firebaseUnsubscribers = [];
-            isFirebaseConnected = false;
-
             try {
-                const existingApp = window.fbSDK.getApps().find(app => app.name === 'tradingApp');
-                if (existingApp && (
-                    existingApp.options.databaseURL !== cfg.databaseURL ||
-                    (cfg.apiKey && existingApp.options.apiKey !== cfg.apiKey) ||
-                    (cfg.projectId && existingApp.options.projectId !== cfg.projectId)
-                )) {
-                    throw new Error('Firebase app "tradingApp" already exists with different configuration. Reload after changing configuration.');
-                }
-                firebaseAppInstance = existingApp || window.fbSDK.initializeApp(cfg, 'tradingApp');
-                dbInstance = window.fbSDK.getDatabase(firebaseAppInstance);
+                const app = window.fbSDK.initializeApp(cfg, 'tradingApp');
+                dbInstance = window.fbSDK.getDatabase(app);
                 dbRef = window.fbSDK.ref(dbInstance, DB_NODE_NAME);
 
-                firebaseUnsubscribers.push(window.fbSDK.onValue(dbRef, (snapshot) => {
+             // СЛУШАТЕЛЬ ОСНОВНЫХ ОТЧЁТОВ
+                window.fbSDK.onValue(dbRef, (snapshot) => {
                     const data = snapshot.val();
-                    reportsHistory = data
-                        ? Object.entries(data).map(([key, val]) => ({ ...val, fbKey: key }))
-                            .sort((a, b) => b.id - a.id)
-                        : [];
-                    window._reportsLoadedOnce = true;
-                    window._statsLoadedOnce = true;
+                    if (data) {
+                        reportsHistory = Object.entries(data).map(([key, val]) => ({
+                            ...val,
+                            fbKey: key
+                        })).sort((a, b) => b.id - a.id);
+                    } else {
+                        reportsHistory = [];
+                    }
+                    window._reportsLoadedOnce = true; // Флаг: журнал получен
+                    window._statsLoadedOnce = true;  // Флаг: статистика получена
                     renderReportsFeed();
-                }));
+                });
 
+                // СЛУШАТЕЛЬ БЭКТЕСТОВ (Общая база с разделением по авторам)
                 const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
-                firebaseUnsubscribers.push(window.fbSDK.onValue(backtestRef, (snapshot) => {
-                    if (replaceBacktestsFromFirebase(snapshot.val())) scheduleBacktestRender();
-                }));
-
+                window.fbSDK.onValue(backtestRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const allBacktests = Object.entries(data).map(([key, val]) => ({
+                            ...val,
+                            fbKey: key
+                        }));
+                        localStorage.setItem('local_backtest_reports', JSON.stringify(allBacktests));
+                    } else {
+                        localStorage.setItem('local_backtest_reports', JSON.stringify([]));
+                    }
+                    renderBacktestStats();
+                    renderBacktestHistory();
+                });
+// СЛУШАТЕЛЬ ЧЕКБОКСОВ ВЫХОДНЫХ (Для Vladimir и Max)
                 ['Vladimir', 'Max'].forEach(userName => {
                     const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${userName}`);
+                    
+                    // Показываем спиннер загрузки в главном блоке при старте
                     if (userName === currentUser) {
                         const sessionStatus = document.getElementById('weekend-session-status');
                         if (sessionStatus) {
                             sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Синхронизация с облаком...</span></span>';
                         }
                     }
-                    firebaseUnsubscribers.push(window.fbSDK.onValue(checkRef, (snapshot) => {
+
+                    window.fbSDK.onValue(checkRef, (snapshot) => {
                         const data = snapshot.val();
                         if (data) {
-                            const key = `weekend_checklist_${userName}`;
-                            const serialized = JSON.stringify(data);
-                            if (localStorage.getItem(key) !== serialized) {
-                                try { localStorage.setItem(key, serialized); }
-                                catch (err) { console.warn('Checklist local cache could not be saved.', err); }
-                            }
+                            localStorage.setItem(`weekend_checklist_${userName}`, JSON.stringify(data));
                         }
-                        if (userName === currentUser) loadSavedChecklistState();
-                    }));
+                        if (userName === currentUser) {
+                            loadSavedChecklistState();
+                        }
+                    });
                 });
+                
+                isFirebaseConnected = true;
+                const badge = document.getElementById('sync-status-badge');
+                badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/35";
+                badge.innerHTML = '<i class="fa-solid fa-wifi mr-1"></i> Live Sync';
 
+                // СЛУШАТЕЛЬ РАЗБЛОКИРОВКИ СЕССИИ ДЛЯ ОБОИХ УСТРОЙСТВ
                 const now = new Date();
                 const todayKey = `session_unlocked_${now.getFullYear()}_${now.getMonth()}_${now.getDate()}`;
                 const unlockRef = window.fbSDK.ref(dbInstance, `unlocks/${todayKey}`);
-                firebaseUnsubscribers.push(window.fbSDK.onValue(unlockRef, (snapshot) => {
+                window.fbSDK.onValue(unlockRef, (snapshot) => {
                     if (snapshot.val() === true) {
                         sessionStorage.setItem(todayKey, 'true');
                         initSessionTimer();
                     }
-                }));
-
-                firebaseConfigSignature = nextSignature;
-                isFirebaseConnected = true;
-                const badge = document.getElementById('sync-status-badge');
-                if (badge) {
-                    badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/35";
-                    badge.innerHTML = '<i class="fa-solid fa-wifi mr-1"></i> Live Sync';
-                }
+                });
             } catch (err) {
                 console.error("Firebase init failed:", err);
-                firebaseUnsubscribers.forEach(unsubscribe => {
-                    try { if (typeof unsubscribe === 'function') unsubscribe(); } catch (_) {}
-                });
-                firebaseUnsubscribers = [];
                 fallbackToLocal();
             }
         }
 
         function fallbackToLocal() {
-            firebaseUnsubscribers.forEach(unsubscribe => {
-                try { if (typeof unsubscribe === 'function') unsubscribe(); } catch (_) {}
-            });
-            firebaseUnsubscribers = [];
-            firebaseConfigSignature = '';
-            backtestsFirebaseRaw = null;
             isFirebaseConnected = false;
             dbInstance = null;
             const badge = document.getElementById('sync-status-badge');
-            if (badge) {
-                badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-gray-800 text-gray-400 border border-gray-700";
-                badge.innerHTML = '<i class="fa-solid fa-hard-drive mr-1"></i> Local';
-            }
+            badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-gray-800 text-gray-400 border border-gray-700";
+            badge.innerHTML = '<i class="fa-solid fa-hard-drive mr-1"></i> Local';
 
             const localData = localStorage.getItem('local_trading_reports');
             if (localData) {
@@ -3133,7 +2968,7 @@ function resetWizard() {
             renderReportsFeed();
         }
 
-       function saveFirebaseConfig() {
+        function saveFirebaseConfig() {
             const dbUrl = document.getElementById('fb-database-url').value.trim();
             const apiKey = document.getElementById('fb-api-key').value.trim();
             const projId = document.getElementById('fb-project-id').value.trim();
@@ -3144,20 +2979,19 @@ function resetWizard() {
             }
 
             const cfg = { databaseURL: dbUrl, apiKey: apiKey, projectId: projId };
-            localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(cfg));
+            localStorage.setItem('firebase_sync_config', JSON.stringify(cfg));
             toggleFirebaseModal();
             location.reload();
         }
 
         function clearFirebaseConfig() {
-            localStorage.removeItem(FB_CONFIG_KEY);
+            localStorage.removeItem('firebase_sync_config');
             toggleFirebaseModal();
             fallbackToLocal();
         }
-
-        
         let backtestImageData = null;
-        let backtestImage1 = null;
+
+      let backtestImage1 = null;
         let backtestImage2 = null;
 
       function openWeekendModal() {
@@ -3215,7 +3049,7 @@ function closeWeekendModal() {
             const c3 = document.getElementById('chk-3')?.checked ? 1 : 0;
             const totalChecks = c1 + c2 + c3;
 
-            const backtests = getBacktests();
+            const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             const { satStr, sunStr } = getCurrentWeekendDates();
             const weekendSaved = backtests.filter(item => (item.date === satStr || item.date === sunStr) && item.author === currentUser);
 
@@ -3285,176 +3119,85 @@ function closeWeekendModal() {
             }
         }
 
-        // Shared backtest image pipeline: resize, flatten transparency, JPEG encode.
-        // If canvas encoding fails, retain the original file as a data URL instead of losing it.
-        async function processBacktestImage(file) {
-            if (!file || !file.type || !file.type.startsWith('image/')) {
-                throw new Error('Выберите корректный файл изображения.');
-            }
-
-            let objectUrl = null;
-            let bitmap = null;
-            let canvas = null;
-            try {
-                if (typeof createImageBitmap === 'function') {
-                    bitmap = await createImageBitmap(file);
-                } else {
-                    objectUrl = URL.createObjectURL(file);
-                    const image = new Image();
-                    image.src = objectUrl;
-                    if (image.decode) await image.decode();
-                    else await new Promise((resolve, reject) => {
-                        image.onload = resolve;
-                        image.onerror = reject;
-                    });
-                    bitmap = image;
-                }
-
-                const originalWidth = bitmap.width || bitmap.naturalWidth;
-                const originalHeight = bitmap.height || bitmap.naturalHeight;
-                if (!originalWidth || !originalHeight) throw new Error('Не удалось определить размеры изображения.');
-
-                const maxSide = 1700;
-                const scale = Math.min(1, maxSide / Math.max(originalWidth, originalHeight));
-                const width = Math.max(1, Math.round(originalWidth * scale));
-                const height = Math.max(1, Math.round(originalHeight * scale));
-
-                await new Promise(resolve => requestAnimationFrame(resolve));
-                canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const context = canvas.getContext('2d', { alpha: false });
-                if (!context) throw new Error('Canvas недоступен.');
-                context.fillStyle = '#ffffff';
-                context.fillRect(0, 0, width, height);
-                context.drawImage(bitmap, 0, 0, width, height);
-
-                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.80));
-                if (!blob) throw new Error('Не удалось сжать изображение.');
-                return await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = () => reject(reader.error || new Error('Не удалось прочитать обработанное изображение.'));
-                    reader.readAsDataURL(blob);
-                });
-            } catch (err) {
-                console.warn('Backtest image optimization failed; preserving original image.', err);
-                return await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = () => reject(reader.error || err);
-                    reader.readAsDataURL(file);
-                });
-            } finally {
-                if (bitmap && typeof bitmap.close === 'function') bitmap.close();
-                if (canvas) {
-                    canvas.width = 0;
-                    canvas.height = 0;
-                }
-                if (objectUrl) URL.revokeObjectURL(objectUrl);
-            }
-        }
-
-        async function handleBacktestImage(slot, event) {
-            const file = event.target.files && event.target.files[0];
+        function handleBacktestImage(slot, event) {
+            const file = event.target.files[0];
             if (!file) return;
-            const token = ++backtestImageLoadTokens[slot];
-            try {
-                const optimizedImage = await processBacktestImage(file);
-                if (token !== backtestImageLoadTokens[slot]) return;
 
+            const reader = new FileReader();
+            reader.onload = function(e) {
                 if (slot === 1) {
-                    backtestImage1 = optimizedImage;
-                    document.getElementById('backtest-img-1').src = optimizedImage;
+                    backtestImage1 = e.target.result;
+                    document.getElementById('backtest-img-1').src = backtestImage1;
                     document.getElementById('backtest-ph-1').classList.add('hidden');
                     document.getElementById('backtest-prev-wrap-1').classList.remove('hidden');
                 } else if (slot === 2 && backtestImage1) {
-                    backtestImage2 = optimizedImage;
-                    document.getElementById('backtest-img-2').src = optimizedImage;
+                    backtestImage2 = e.target.result;
+                    document.getElementById('backtest-img-2').src = backtestImage2;
                     document.getElementById('backtest-ph-2').classList.add('hidden');
                     document.getElementById('backtest-prev-wrap-2').classList.remove('hidden');
                 }
                 updateWeekendProgress();
-                updateSaveButtonState();
-            } catch (err) {
-                console.error('Backtest image processing failed:', err);
-                alert('Не удалось обработать изображение. Исходный файл не был сохранён; попробуйте ещё раз.');
-            } finally {
-                if (event.target) event.target.value = '';
-            }
+                updateSaveButtonState(); // <--- Возвращаем кнопку в активный режим для сохранения нового файла
+            };
+            reader.readAsDataURL(file);
         }
 
-      async function saveWeekendActivity() {
-            if (backtestSaveInProgress) return;
+      function saveWeekendActivity() {
             if (!backtestImage1 && !backtestImage2) {
-                const backtests = getBacktests();
-                const todayStr = formatDate(Date.now());
+                const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+                const now = new Date();
+                const todayStr = formatDate(now.getTime());
                 const weekendSaved = backtests.filter(item => item.date === todayStr && item.author === currentUser);
+                
                 if (weekendSaved.length === 0) {
                     alert('Пожалуйста, загрузите хотя бы один скриншот бэктеста FX Replay.');
                     return;
                 }
-                return;
             }
 
-            backtestSaveInProgress = true;
             const timestamp = Date.now();
-            const entries = [];
-            if (backtestImage1) entries.push({ slot: 1, data: { id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 } });
-            if (backtestImage2) entries.push({ slot: 2, data: { id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 } });
-
-            try {
-                if (isFirebaseConnected && dbInstance) {
-                    const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
-                    const results = await Promise.allSettled(entries.map(entry => window.fbSDK.push(backtestRef, entry.data)));
-                    const failedEntries = [];
-                    results.forEach((result, index) => {
-                        if (result.status === 'fulfilled') {
-                            if (entries[index].slot === 1) backtestImage1 = null;
-                            if (entries[index].slot === 2) backtestImage2 = null;
-                        } else {
-                            console.error('Firebase backtest save error:', result.reason);
-                            failedEntries.push(entries[index]);
-                        }
-                    });
-                    if (failedEntries.length) {
-                        const local = getBacktests().slice();
-                        failedEntries.forEach(entry => local.unshift(entry.data));
-                        const localSaved = setBacktests(local);
-                        if (localSaved) {
-                            failedEntries.forEach(entry => {
-                                if (entry.slot === 1) backtestImage1 = null;
-                                if (entry.slot === 2) backtestImage2 = null;
-                            });
-                            alert('Часть бэктестов не удалось отправить в Firebase. Они сохранены локально на этом устройстве; проверьте соединение и синхронизацию.');
-                        } else {
-                            alert('Firebase не принял часть изображений, а локальное хранилище переполнено. Скриншоты оставлены в форме — не закрывайте страницу и повторите попытку.');
-                        }
-                    }
-                } else {
-                    const local = getBacktests().slice();
-                    entries.forEach(entry => local.unshift(entry.data));
-                    const localSaved = setBacktests(local);
-                    if (localSaved) {
-                        backtestImage1 = null;
-                        backtestImage2 = null;
-                    } else {
-                        alert('Локальное хранилище переполнено. Скриншоты оставлены в форме — не закрывайте страницу и повторите попытку после освобождения места.');
-                    }
+            
+            if (isFirebaseConnected && dbInstance) {
+                const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
+                
+                let promises = [];
+                if (backtestImage1) {
+                    const newEntry1 = { id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 };
+                    promises.push(window.fbSDK.push(backtestRef, newEntry1));
+                }
+                if (backtestImage2) {
+                    const newEntry2 = { id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 };
+                    promises.push(window.fbSDK.push(backtestRef, newEntry2));
                 }
 
+                Promise.all(promises).then(() => {
+                    backtestImage1 = null;
+                    backtestImage2 = null;
+                    updateWeekendProgress();
+                    renderBacktestStats();
+                    renderBacktestHistory();
+                    checkAndTransformBacktestSection();
+                }).catch(err => {
+                    console.error("Firebase backtest save error:", err);
+                    alert("Ошибка сохранения бэктестов в базу.");
+                });
+            } else {
+                // Запасной вариант для локального режима
+                let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+                if (backtestImage1) backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 });
+                if (backtestImage2) backtests.unshift({ id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 });
+                localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
+
+                backtestImage1 = null;
+                backtestImage2 = null;
                 updateWeekendProgress();
                 renderBacktestStats();
                 renderBacktestHistory();
                 checkAndTransformBacktestSection();
-            } finally {
-                backtestSaveInProgress = false;
-                updateSaveButtonState();
             }
         }
-
 function renderBacktestStats() {
-            const backtests = getBacktests();
+            const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             const now = new Date();
             const currentQuarter = Math.floor(now.getMonth() / 3);
             const currentYear = now.getFullYear();
@@ -3525,9 +3268,9 @@ function deleteArchivedBacktest(event, id, fbKey) {
                     alert("Ошибка при удалении бэктеста из базы данных.");
                 });
             } else {
-                let backtests = getBacktests();
+                let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
                 backtests = backtests.filter(item => String(item.id) !== String(id));
-                setBacktests(backtests);
+                localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
 
                 renderBacktestStats();
                 renderBacktestHistory();
@@ -3541,9 +3284,6 @@ function deleteArchivedBacktest(event, id, fbKey) {
         function renderBacktestHistory() {
             const grid = document.getElementById('backtest-archive-grid');
             if (!grid) return;
-            const renderKey = `${backtestsCacheVersion}|${currentUser}|${!!archiveEditState.Vladimir}|${!!archiveEditState.Max}`;
-            if (renderKey === backtestHistoryRenderKey && grid.childElementCount) return;
-            backtestHistoryRenderKey = renderKey;
             grid.innerHTML = '';
 
             const otherUser = currentUser === 'Vladimir' ? 'Max' : 'Vladimir';
@@ -3579,7 +3319,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
         }
 
         function populateColumn(feedEl, authorName, isEditing) {
-            const backtests = getBacktests();
+            const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             const userTests = backtests.filter(item => item.author === authorName);
             const ordinalWords = ['Первые', 'Вторые', 'Третьи', 'Четвертые', 'Пятые', 'Шестые', 'Седьмые', 'Восьмые', 'Девятые', 'Десятые'];
 
@@ -3629,7 +3369,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
 
                     mainImagesHtml += `
                         <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Кликните для увеличения'}">
-                            <img loading="lazy" decoding="async" src="${item.image}" class="w-14 h-14 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-brand-border group-hover:border-amber-400'} transition shadow-md">
+                            <img src="${item.image}" class="w-14 h-14 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-brand-border group-hover:border-amber-400'} transition shadow-md">
                             <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-[8px] text-amber-300 px-1 rounded font-mono">#${idx + 1}</span>
                             ${deleteBtnHtml}
                         </div>
@@ -3648,7 +3388,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
 
                         extraImagesHtml += `
                             <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Дополнительный бэктест'}">
-                                <img loading="lazy" decoding="async" src="${item.image}" class="w-11 h-11 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-amber-500/40 group-hover:border-amber-400'} transition shadow-md">
+                                <img src="${item.image}" class="w-11 h-11 object-cover rounded-lg border ${isEditing ? 'border-rose-500/60 opacity-90 animate-pulse' : 'border-amber-500/40 group-hover:border-amber-400'} transition shadow-md">
                                 <span class="absolute bottom-0.5 right-0.5 bg-black/80 text-[7px] text-amber-400 px-1 rounded font-mono">#${actualIdx + 1}</span>
                                 ${deleteBtnHtml}
                             </div>
@@ -3701,11 +3441,33 @@ function deleteArchivedBacktest(event, id, fbKey) {
             onStepCheckboxChange(num);
         }
 
-    function loadSavedChecklistState() {
-            const saved = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
-            applyChecklistVisuals(saved);
-            updateWeekendProgress();
-            renderBacktestStats();
+       // Восстановление состояния чекбоксов из localStorage или Firebase
+     function loadSavedChecklistState() {
+            // Анимация загрузки в первом главном блоке («Склонность к системной торговле»)
+            const sessionStatus = document.getElementById('weekend-session-status');
+            if (sessionStatus) {
+                sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Загрузка данных из облака...</span></span>';
+            }
+
+            if (isFirebaseConnected && dbInstance) {
+                const checklistRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${currentUser}`);
+                window.fbSDK.onValue(checklistRef, (snapshot) => {
+                    const data = snapshot.val() || {};
+                    applyChecklistVisuals(data);
+                    updateWeekendProgress();
+                    renderBacktestStats();
+                }, (error) => {
+                    console.error("Firebase checklist read error:", error);
+                    updateWeekendProgress();
+                    renderBacktestStats();
+                });
+            } else {
+                // Режим localStorage
+                const saved = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
+                applyChecklistVisuals(saved);
+                updateWeekendProgress();
+                renderBacktestStats();
+            }
         }
 
         // Вспомогательная функция отрисовки чекбоксов, текстов и мгновенного скрытия линий таймера
@@ -3835,7 +3597,7 @@ function deleteArchivedBacktest(event, id, fbKey) {
         };
 
         function checkAndTransformBacktestSection() {
-            const backtests = getBacktests();
+            const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             const now = new Date();
             const todayStr = formatDate(now.getTime());
             const weekendSaved = backtests.filter(item => item.date === todayStr && item.author === currentUser);
@@ -3862,53 +3624,38 @@ function deleteArchivedBacktest(event, id, fbKey) {
             }
         }
         
-async function handleExtraBacktest(event) {
-            const file = event.target.files && event.target.files[0];
-            if (!file || extraBacktestSaveInProgress) return;
-            extraBacktestSaveInProgress = true;
-            try {
-                const optimizedImage = await processBacktestImage(file);
-                const timestamp = Date.now();
-                const entry = { id: timestamp, author: currentUser, date: formatDate(timestamp), image: optimizedImage };
+function handleExtraBacktest(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-                const backtests = getBacktests().slice();
-                backtests.unshift(entry);
-                const localSaved = setBacktests(backtests);
-                let firebaseSaved = false;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const timestamp = Date.now();
+                let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+                
+                // Добавляем новый скриншот
+                backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
+                localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
 
                 if (isFirebaseConnected && dbInstance) {
-                    try {
-                        const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
-                        await window.fbSDK.push(backtestRef, entry);
-                        firebaseSaved = true;
-                    } catch (err) {
-                        console.error('Firebase extra backtest save error:', err);
-                    }
+                    const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
+                    window.fbSDK.push(backtestRef, { id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
                 }
 
-                if (!localSaved && !firebaseSaved) {
-                    alert('Не удалось сохранить дополнительный скриншот: Firebase недоступен, а локальное хранилище переполнено. Попробуйте после освобождения места.');
-                    return;
-                }
-                if (!firebaseSaved && isFirebaseConnected) {
-                    alert(localSaved
-                        ? 'Не удалось синхронизировать дополнительный бэктест с Firebase. Копия сохранена локально на этом устройстве.'
-                        : 'Firebase не принял изображение, а локальная копия не помещается в хранилище.');
-                }
-
+                // Пересчитываем статистику и перерисовываем архив
                 renderBacktestStats();
                 renderBacktestHistory();
                 updateSaveButtonState();
-                event.target.value = '';
-                openExtraBacktestSuccessModal();
-            } catch (err) {
-                console.error('Extra backtest image processing/save failed:', err);
-                alert('Не удалось сохранить дополнительный скриншот. Попробуйте ещё раз.');
-            } finally {
-                extraBacktestSaveInProgress = false;
-            }
-        }
 
+                // Сбрасываем input, чтобы можно было выбрать следующий файл
+                event.target.value = '';
+
+                // Модалка вызывается СТРОГО по факту того, что данные записаны и архив обновился
+                openExtraBacktestSuccessModal();
+            };
+            reader.readAsDataURL(file);
+        }
+        
         function openExtraBacktestSuccessModal() {
             const modal = document.getElementById('extra-backtest-success-modal');
             if (modal) modal.classList.remove('hidden');
@@ -4250,7 +3997,7 @@ function closeModal(modalId) {
 
         // Проверка, сохранял ли пользователь бэктесты в эти выходные
         function hasUserSavedThisWeekend(author) {
-            const backtests = getBacktests();
+            const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             const { satStr, sunStr } = getCurrentWeekendDates();
             return backtests.some(item => item.author === author && (item.date === satStr || item.date === sunStr));
         }
