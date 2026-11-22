@@ -319,16 +319,6 @@
     opacity: 0;
     transform: translateY(20px);
 }
-
-        @media (max-width: 640px) {
-    /* Отступы строго для блока загрузки, не трогая карточки отчётов */
-    #reports-feed #loading-skeleton-card {
-        padding-top: 1rem !important;
-        padding-bottom: 1rem !important;
-        margin-top: 1rem !important;
-        margin-bottom: 1rem !important;
-    }
-}
     </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -1159,9 +1149,6 @@
         // Имя узла в базе данных для этого сайта
 const DB_NODE_NAME = 'reports_vladimir'; 
 
-        // Вот сюда добавляем эту переменную, чтобы она была глобальной:
-let isYesterdayModeActive = false;
-
         // Пароль для досрочного разблокирования формы во время сессии (можно изменить здесь)
         const SESSION_UNLOCK_PASSWORD = '1888';
 
@@ -1534,10 +1521,7 @@ function forceRefreshMarquee(titleEl) {
 
 // Торговая сессия, проверка завершённости дня и логика 1-дневного Блока
         function initSessionTimer() {
-            // Еслы открыт режим ручного ввода за вчера, блокируем сброс таймером
-    if (isYesterdayModeActive) return;
-    
-    const now = new Date();
+            const now = new Date();
             const dayOfWeek = now.getDay(); // 0 - ВС, 1 - ПН, ..., 5 - ПТ, 6 - СБ
             const hours = now.getHours();
             const minutes = now.getMinutes();
@@ -2055,8 +2039,6 @@ function forceRefreshMarquee(titleEl) {
             } else {
                 saveLocally(newEntry);
             }
-            // Сбрасываем флаг режима вчерашнего дня после успешной отправки
-    isYesterdayModeActive = false;
         }
 
         function saveLocally(entry) {
@@ -2100,21 +2082,15 @@ function forceRefreshMarquee(titleEl) {
                 closeDeleteModal();
             }
         });
-function resetWizard() {
-    reportData = { trades: '', compliance: '', error: 'Отсутствуют', image: null, comment: '', timestamp: '' };
-    const commentInput = document.getElementById('report-comment-input');
-    if (commentInput) commentInput.value = '';
-    removeImage();
-    goToStep(1);
-    
-    // Исправляем прокрутку: ведем экран на самый верх совместного журнала (к счётчику записей)
-    const feedHeader = document.getElementById('reports-count');
-    if (feedHeader) {
-        const rect = feedHeader.getBoundingClientRect();
-        const absoluteTop = rect.top + window.pageYOffset - 90; // с отступом под шапку
-        smoothScrollTo(absoluteTop, 500);
-    }
-}
+
+        function resetWizard() {
+            reportData = { trades: '', compliance: '', error: 'Отсутствуют', image: null, comment: '', timestamp: '' };
+            const commentInput = document.getElementById('report-comment-input');
+            if (commentInput) commentInput.value = '';
+            removeImage();
+            goToStep(1);
+            document.getElementById('reports-feed').scrollIntoView({ behavior: 'smooth' });
+        }
 
        // Плавное открытие и мягкое центрирование поля ввода
         function toggleReplyInput(id) {
@@ -2554,14 +2530,14 @@ function resetWizard() {
             // Если соединение с Firebase активно, но лента пуста и данные еще ждем, 
             // показываем анимацию загрузки в Журнале сессий
             if (isFirebaseConnected && reportsHistory.length === 0 && !window._reportsLoadedOnce) {
-    container.innerHTML = `
-        <div id="loading-skeleton-card" class="glass-panel p-8 text-center text-amber-400 rounded-xl flex items-center justify-center space-x-3">
-            <i class="fa-solid fa-spinner fa-spin text-xl"></i>
-            <span class="text-xs font-medium">Загрузка журнала сессий из базы данных...</span>
-        </div>
-    `;
-    return;
-}
+                container.innerHTML = `
+                    <div class="glass-panel p-8 text-center text-amber-400 rounded-xl flex items-center justify-center space-x-3">
+                        <i class="fa-solid fa-spinner fa-spin text-xl"></i>
+                        <span class="text-xs font-medium">Загрузка журнала сессий из базы данных...</span>
+                    </div>
+                `;
+                return;
+            }
 
             container.innerHTML = '';
             document.getElementById('reports-count').innerText = `${reportsHistory.length} записей`;
@@ -4059,15 +4035,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(checkYesterdayButtonVisibility, 60000);
 });
 
+// Логика вызова формы за вчерашний день
 function openYesterdayReportForm() {
     const now = new Date();
     if (now.getHours() >= 9) {
         alert('Время ввода отчёта за вчерашний день истекло (доступно только до 09:00).');
         return;
     }
-
-    // Активируем флаг ручного открытия формы за вчера
-    isYesterdayModeActive = true;
 
     // Сдвигаем дату на вчера
     let yesterdaySessionDate = new Date(now);
@@ -4080,7 +4054,7 @@ function openYesterdayReportForm() {
     if (timerCard) timerCard.classList.add('hidden');
     if (wizardContainer) wizardContainer.classList.remove('hidden');
 
-    // Сохраняем кастомный таймстемп
+    // Перезаписываем таймстемп в reportData на вчерашний день, чтобы запись ушла в журнал как вчерашняя
     reportData.customSessionTimestamp = yesterdaySessionDate.getTime();
 }
     </script>
