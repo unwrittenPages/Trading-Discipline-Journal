@@ -142,6 +142,7 @@
                 padding-right: 10px;
             }
             .glass-panel {
+                padding: 1rem !important;
                 border-radius: 1rem !important;
             }
             /* Убираем лишний внешний отступ у карточек записей в журнале */
@@ -167,27 +168,6 @@
         opacity: 1;
     }
 }
-
-        @media (max-width: 640px) {
-    /* Применяем 1rem (16px) ко всем блокам со стилем p-6 или классным панелям на мобилках */
-    .glass-panel, 
-    section.glass-panel, 
-    div[class*="p-6"] {
-        padding: 0.85rem !important;
-        margin-top: 1.5rem !important;
-    }
-
-            /* Исключение для модалки выходных: сбрасываем отступы у панели под 0, чтобы скролл прижался к краю */
-    #weekend-modal .glass-panel {
-        padding: 0rem !important;
-    }
-       /* Меняем верхний отступ main (mt-8) с 2rem на 1.5rem на мобилках */
-    main.mt-8,
-    .mt-8 {
-        margin-top: 1.5rem !important;
-    }  
-}
-        
 
     /* ==========================================
        СТИЛЬНЫЕ АНИМИРОВАННЫЕ ЧЕКБОКСЫ И ТАЙМЕР
@@ -328,7 +308,7 @@
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto mt-8 space-y-8">
+    <main class="max-w-5xl mx-auto px-4 mt-8 space-y-8">
 
         <!-- Pre-trading Discipline Code Header Card -->
         <section class="glass-panel rounded-2xl p-6 border border-brand-border/80 shadow-2xl">
@@ -601,7 +581,7 @@
 
         <!-- SESSION FEED / HISTORY SECTION -->
         <section class="space-y-4">
-            <div class="flex items-center justify-between pl-4">
+            <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-base sm:text-lg font-bold text-white flex items-center space-x-2">
                         <span>Совместный Журнал Сессий</span>
@@ -699,11 +679,11 @@
         </div>
     </div>
 
-<!-- Modal Checklist for Rules & System AMD Guide -->
-    <div id="rule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden" data-lenis-prevent>
-        <div class="glass-panel w-full max-w-2xl md:max-w-3xl lg:max-w-4xl rounded-2xl border border-brand-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl transition-all duration-300">
-            <!-- Header (свои отступы для шапки) -->
-            <div class="flex items-center justify-between border-b border-brand-border py-4 px-5 sm:px-6 flex-shrink-0 gap-4">
+ <!-- Modal Checklist for Rules & System AMD Guide -->
+    <div id="rule-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel w-full max-w-2xl md:max-w-3xl lg:max-w-4xl rounded-2xl p-6 border border-brand-border space-y-5 max-h-[90vh] flex flex-col shadow-2xl transition-all duration-300" data-lenis-prevent>
+            <div class="flex items-center justify-between border-b border-brand-border pb-3 flex-shrink-0 gap-4">
+                <!-- Обертка с маской overflow-hidden для эффекта бегущей строки -->
                 <div class="flex items-center space-x-2 flex-1 min-w-0 overflow-hidden relative">
                     <h3 class="font-bold text-white text-base sm:text-lg flex items-center space-x-2 min-w-max">
                         <span id="rule-modal-main-title" class="block">Кодекс Дисциплины и Регламент AMD</span>
@@ -711,45 +691,27 @@
                 </div>
 
                 <div class="flex items-center space-x-2 flex-shrink-0">
+                    <!-- Кнопки изменения шрифта -->
                     <div class="flex items-center space-x-1 bg-brand-dark/60 border border-brand-border rounded-lg px-1.5 py-0.5 text-xs">
                         <button onclick="adjustRuleFontSize(-1)" class="text-gray-400 hover:text-amber-400 px-1 font-bold transition" title="Уменьшить шрифт">A-</button>
                         <span class="text-brand-border">|</span>
                         <button onclick="adjustRuleFontSize(1)" class="text-gray-400 hover:text-amber-400 px-1 font-bold transition" title="Увеличить шрифт">A+</button>
                     </div>
+                    <!-- Кнопка закрытия / возврата -->
                     <button id="rule-modal-top-btn" onclick="toggleRuleModal()" class="text-gray-400 hover:text-amber-400 text-lg p-1 transition group" title="Закрыть">
                         <i id="rule-modal-top-icon" class="fa-solid fa-xmark text-gray-400 group-hover:text-amber-400 transition-colors"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Контейнер скролла: ПАДДИНГИ УБРАНЫ (px-0), чтобы бегунок прижался в самый край панели -->
-            <div id="rule-modal-content-container" class="space-y-3 overflow-y-auto py-4 px-3 sm:px-5 flex-1 text-sm transition-all duration-200" style="font-size: 0.875rem;" data-lenis-prevent>
-                <!-- Динамически наполняется через JavaScript -->
-            </div>
+            <!-- Контейнер со списком этапов / детальным просмотром -->
+            <div id="rule-modal-content-container" class="space-y-3 overflow-y-auto pr-1 pt-3 flex-1 text-sm transition-all duration-200" style="font-size: 0.875rem;">
+    <!-- Динамически наполняется через JavaScript -->
+</div>
 
-            <div id="rule-modal-footer-close" class="flex-shrink-0 pt-3 pb-4 px-5 sm:px-6 border-t border-brand-border/60">
+            <div id="rule-modal-footer-close" class="flex-shrink-0 pt-2 border-t border-brand-border/60">
                 <button onclick="toggleRuleModal()" class="w-full bg-brand-card hover:bg-gray-800 text-white font-medium py-3 sm:py-2.5 rounded-xl border border-brand-border text-xs transition">
                     Понятно, закрыть
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Кастомная модалка: Дополнительный бэктест сохранен (с правильным z-index) -->
-    <div id="extra-backtest-success-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[70] flex items-center justify-center p-4 hidden">
-        <div class="glass-panel max-w-sm w-full rounded-2xl p-6 border border-emerald-500/30 text-center space-y-4 shadow-2xl">
-            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/30">
-                <i class="fa-solid fa-circle-check"></i>
-            </div>
-            <div>
-                <h3 class="font-bold text-white text-base">Успешно сохранено!</h3>
-                <p class="text-xs text-gray-300 mt-2 leading-relaxed">
-                    Дополнительный бэктест успешно зафиксирован в архиве и добавлен в общую статистику!
-                </p>
-            </div>
-            <div class="pt-2">
-                <button onclick="closeExtraBacktestSuccessModal()" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 sm:py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20">
-                    Отлично
                 </button>
             </div>
         </div>
@@ -777,9 +739,9 @@
 
     <!-- MODAL: Проводим выходные с пользой -->
     <div id="weekend-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden" data-lenis-prevent>
-        <div class="glass-panel max-w-4xl w-full rounded-2xl border border-brand-border flex flex-col max-h-[90vh] overflow-hidden shadow-2xl">
-            <!-- Header (фиксированная шапка с отступами) -->
-            <div class="flex items-center justify-between border-b border-brand-border/60 py-4 px-3 sm:px-6 flex-shrink-0">
+    <div class="glass-panel max-w-4xl w-full rounded-2xl p-5 sm:p-6 border border-brand-border space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-brand-border/60 pb-3">
                 <div class="flex items-center space-x-3">
                     <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30">
                         <i class="fa-solid fa-seedling"></i>
@@ -789,25 +751,21 @@
                         <p class="text-[11px] text-gray-400">Подготовка разума, проработка ошибок и бэктесты (FX Replay)</p>
                     </div>
                 </div>
-                <button onclick="closeWeekendModal()" class="text-gray-400 hover:text-white p-2 pl-3">
+                <button onclick="closeWeekendModal()" class="text-gray-400 hover:text-white p-1">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <!-- Scrollable Content Container (скроллбар строго на краю, а контент внутри с отступами) -->
-            <div class="overflow-y-auto flex-1 py-4 px-3 sm:px-6 space-y-5" data-lenis-prevent>
-                <!-- 1. Персональная работа над ошибкой недели (в строку) -->
-<div id="personal-error-focus-box" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center space-x-3 hidden">
-    <div class="w-9 h-9 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center text-base border border-rose-500/30 shrink-0">
-        <i class="fa-solid fa-bullseye"></i>
-    </div>
-    <div class="flex-1 min-w-0 text-xs">
-        <div class="font-bold text-rose-300">Главный фокус недели (Твоя последняя ошибка):</div>
-        <p id="personal-error-text" class="text-gray-200 leading-relaxed font-medium mt-0.5"></p>
-    </div>
-</div>
+            <!-- 1. Персональная работа над ошибкой недели -->
+            <div id="personal-error-focus-box" class="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 space-y-1.5 hidden">
+                <div class="text-xs font-bold text-rose-300 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-bullseye"></i>
+                    <span>Главный фокус недели (Твоя последняя ошибка):</span>
+                </div>
+                <p id="personal-error-text" class="text-xs text-gray-200 leading-relaxed font-medium"></p>
+            </div>
 
-                <!-- 2. Чек-лист микронапоминаний с последовательным таймером чтения -->
+          <!-- 2. Чек-лист микронапоминаний с последовательным таймером чтения -->
                 <div class="space-y-3 text-xs" id="weekend-checklist-container">
                     <!-- Блок 1 (Всегда активен) -->
                     <div id="step-box-1" class="p-3.5 rounded-xl bg-brand-dark/50 border border-brand-border/60 transition-all relative overflow-hidden">
@@ -825,7 +783,7 @@
                         </div>
                     </div>
 
-                    <!-- Блок 2 (Изначально заблокирован) -->
+                    <!-- Блок 2 (Изначально заблокирован, текст скрыт подсказкой) -->
                     <div id="step-box-2" class="p-3.5 rounded-xl bg-brand-dark/50 border border-brand-border/60 transition-all relative overflow-hidden opacity-40 pointer-events-none filter grayscale">
                         <div class="flex items-start space-x-3 cursor-pointer" onclick="toggleStepCheck(2)">
                             <div class="custom-checkbox-wrap mt-0.5">
@@ -839,10 +797,11 @@
                                 <p id="desc-2" class="text-xs text-gray-500 italic">Отметься в предыдущем напоминании, чтобы открыть этот блок.</p>
                             </div>
                         </div>
+                        <!-- Линия таймера чтения снизу -->
                         <div class="absolute bottom-0 left-0 h-[2px] bg-amber-500 w-0 transition-all" id="timer-line-2"></div>
                     </div>
 
-                    <!-- Блок 3 (Изначально заблокирован) -->
+                    <!-- Блок 3 (Изначально заблокирован, текст скрыт подсказкой) -->
                     <div id="step-box-3" class="p-3.5 rounded-xl bg-brand-dark/50 border border-brand-border/60 transition-all relative overflow-hidden opacity-40 pointer-events-none filter grayscale">
                         <div class="flex items-start space-x-3 cursor-pointer" onclick="toggleStepCheck(3)">
                             <div class="custom-checkbox-wrap mt-0.5">
@@ -856,158 +815,163 @@
                                 <p id="desc-3" class="text-xs text-gray-500 italic">Отметься в предыдущем напоминании, чтобы открыть этот блок.</p>
                             </div>
                         </div>
+                        <!-- Линия таймера чтения снизу -->
                         <div class="absolute bottom-0 left-0 h-[2px] bg-amber-500 w-0 transition-all" id="timer-line-3"></div>
                     </div>
                 </div>
 
-                <!-- 3. Секция Бэктестинга -->
-                <div class="p-4 rounded-xl bg-brand-dark/60 border border-brand-border space-y-4">
-                   <div class="flex items-start justify-between gap-3">
-                        <h4 class="text-xs font-bold text-white flex items-start space-x-2.5 min-w-0">
-                            <i class="fa-solid fa-desktop text-amber-400 shrink-0 text-base mt-0.5"></i>
-                            <span class="leading-relaxed">Практика Бэктестов (FX Replay — Цель: 2 месяца)</span>
-                        </h4>
-                        <span id="weekend-status-pill" class="text-[10px] text-emerald-400 font-semibold bg-emerald-500/15 px-2.5 py-1 rounded-lg border border-emerald-500/30 text-center inline-flex items-center justify-center shrink-0">Слава Богу! Цель выполнена 🔥</span>
-                    </div>
+          <!-- 3. Секция Бэктестинга (С последовательной анимацией и блокировкой 2-го слота) -->
+            <div class="p-4 rounded-xl bg-brand-dark/60 border border-brand-border space-y-4">
+                <div class="flex items-center justify-between">
+    <h4 class="text-xs font-bold text-white flex items-center space-x-2">
+        <i class="fa-solid fa-desktop text-amber-400"></i>
+        <span>Практика Бэктестов (FX Replay — Цель: 2 месяца)</span>
+    </h4>
+    <span id="weekend-status-pill" class="text-[10px] text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 animate-pulse">Бектесты тебя ждут</span>
+</div>
 
-                    <p class="text-xs text-gray-300 leading-relaxed">
-                        Пройди 2 исторических месяца на FX Replay за эти выходные. Загрузи скриншоты раздельно для фиксации максимальной полезности.
-                    </p>
+                <p class="text-xs text-gray-300 leading-relaxed">
+                    Пройди 2 исторических месяца на FX Replay за эти выходные. Загрузи скриншоты раздельно для фиксации максимальной полезности.
+                </p>
 
-                    <div id="backtest-section-slots" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div id="slot-container-1" class="border-2 border-dashed border-brand-border hover:border-amber-400/50 rounded-xl p-3 text-center bg-brand-card/30 transition cursor-pointer relative">
-                            <input type="file" id="backtest-input-1" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleBacktestImage(1, event)">
-                            <div id="backtest-ph-1" class="space-y-1">
-                                <i class="fa-solid fa-file-image text-amber-400 text-lg"></i>
-                                <div class="text-[11px] text-gray-200 font-medium">Скриншот: Месяц 1 (+15%)</div>
-                            </div>
-                            <div id="backtest-prev-wrap-1" class="hidden relative inline-block">
-                                <img id="backtest-img-1" src="" class="max-h-24 rounded-lg border border-brand-border object-contain">
-                                <span class="absolute bottom-1 right-1 bg-emerald-500 text-black text-[9px] font-bold px-1.5 rounded">Готово</span>
-                            </div>
+                <div id="backtest-section-slots" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Бэктест 1 (Всегда активен) -->
+                    <div id="slot-container-1" class="border-2 border-dashed border-brand-border hover:border-amber-400/50 rounded-xl p-3 text-center bg-brand-card/30 transition cursor-pointer relative">
+                        <input type="file" id="backtest-input-1" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleBacktestImage(1, event)">
+                        <div id="backtest-ph-1" class="space-y-1">
+                            <i class="fa-solid fa-file-image text-amber-400 text-lg"></i>
+                            <div class="text-[11px] text-gray-200 font-medium">Скриншот: Месяц 1 (+15%)</div>
                         </div>
-
-                        <div id="slot-container-2" class="border-2 border-dashed border-brand-border rounded-xl p-3 text-center bg-brand-card/30 transition cursor-pointer relative slot-locked">
-                            <input type="file" id="backtest-input-2" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleBacktestImage(2, event)">
-                            <div id="backtest-ph-2" class="space-y-1">
-                                <i id="slot-icon-2" class="fa-solid fa-lock text-gray-400 text-lg"></i>
-                                <div id="slot-text-2" class="text-[11px] text-gray-400 font-medium">Сначала загрузите Месяц 1</div>
-                            </div>
-                            <div id="backtest-prev-wrap-2" class="hidden relative inline-block">
-                                <img id="backtest-img-2" src="" class="max-h-24 rounded-lg border border-brand-border object-contain">
-                                <span class="absolute bottom-1 right-1 bg-emerald-500 text-black text-[9px] font-bold px-1.5 rounded">Готово</span>
-                            </div>
+                        <div id="backtest-prev-wrap-1" class="hidden relative inline-block">
+                            <img id="backtest-img-1" src="" class="max-h-24 rounded-lg border border-brand-border object-contain">
+                            <span class="absolute bottom-1 right-1 bg-emerald-500 text-black text-[9px] font-bold px-1.5 rounded">Готово</span>
                         </div>
                     </div>
-                </div>
 
-                <!-- Прогресс за эти выходные -->
-                <div class="p-3 rounded-xl bg-brand-dark/40 border border-brand-border/60 space-y-2">
-                    <div class="flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-2 text-xs text-center sm:text-left">
-                        <span class="text-gray-300 font-medium">Прогресс за эти выходные:</span>
-                        <span id="weekend-session-status" class="text-amber-400 font-bold text-center block w-full sm:w-auto"></span>
-                    </div>
-                    <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
-                        <div id="weekend-session-bar" class="bg-gradient-to-r from-amber-500 to-emerald-400 h-full w-0 transition-all duration-500"></div>
-                    </div>
-                </div>
-
-                <!-- Статистика за текущие выходные -->
-                <div class="p-4 rounded-xl bg-brand-dark/80 border border-brand-border space-y-3">
-                    <div class="flex items-start justify-between">
-                        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-start space-x-1.5">
-                            <i class="fa-solid fa-chart-column mt-0.5"></i>
-                            <span>Статистика бэктестов за выходные</span>
-                        </h4>
-                        <span id="weekend-dates-label" class="text-[10px] text-gray-400 font-medium">Загрузка дат...</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div class="p-3 rounded-xl bg-brand-card/60 border border-brand-border space-y-2">
-                            <div class="font-bold text-white flex items-center justify-between">
-                                <span>Vladimir</span>
-                                <span id="vlad-weekend-count" class="text-amber-400">0 мес.</span>
-                            </div>
-                            <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
-                                <div id="vlad-weekend-bar" class="bg-amber-400 h-full w-0 transition-all duration-500"></div>
-                            </div>
-                            <div class="text-[10px] text-gray-400">Цель: 2 месяца за эти выходные</div>
+                    <!-- Бэктест 2 (Заблокирован, пока не загружен 1-й) -->
+                    <div id="slot-container-2" class="border-2 border-dashed border-brand-border rounded-xl p-3 text-center bg-brand-card/30 transition cursor-pointer relative slot-locked">
+                        <input type="file" id="backtest-input-2" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleBacktestImage(2, event)">
+                        <div id="backtest-ph-2" class="space-y-1">
+                            <i id="slot-icon-2" class="fa-solid fa-lock text-gray-400 text-lg"></i>
+                            <div id="slot-text-2" class="text-[11px] text-gray-400 font-medium">Сначала загрузите Месяц 1</div>
                         </div>
-
-                        <div class="p-3 rounded-xl bg-brand-card/60 border border-brand-border space-y-2">
-                            <div class="font-bold text-white flex items-center justify-between">
-                                <span>Max</span>
-                                <span id="max-weekend-count" class="text-amber-400">0 мес.</span>
-                            </div>
-                            <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
-                                <div id="max-weekend-bar" class="bg-amber-400 h-full w-0 transition-all duration-500"></div>
-                            </div>
-                            <div class="text-[10px] text-gray-400">Цель: 2 месяца за эти выходные</div>
+                        <div id="backtest-prev-wrap-2" class="hidden relative inline-block">
+                            <img id="backtest-img-2" src="" class="max-h-24 rounded-lg border border-brand-border object-contain">
+                            <span class="absolute bottom-1 right-1 bg-emerald-500 text-black text-[9px] font-bold px-1.5 rounded">Готово</span>
                         </div>
-                    </div>
-                </div>
-
-                <div class="pt-2 border-t border-brand-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
-                        <div class="text-xs text-gray-400">
-                            Уровень полезности: <span id="weekend-usefulness-score" class="font-bold text-amber-400">0%</span>
-                        </div>
-                    </div>
-                    <button onclick="saveWeekendActivity()" id="save-weekend-btn" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-1.5">
-                        <i class="fa-solid fa-check"></i>
-                        <span>Зафиксировать и Сохранить</span>
-                    </button>
-                </div>
-
-                <!-- Квартальная статистика -->
-                <div class="p-4 rounded-xl bg-brand-dark/80 border border-brand-border space-y-3">
-                    <div class="flex items-start justify-between">
-                        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-start space-x-1.5">
-                            <i class="fa-solid fa-chart-column mt-0.5"></i>
-                            <span>Статистика бэктестов (Квартал / 3 месяца)</span>
-                        </h4>
-                        <span id="quarter-dates-label" class="text-[10px] text-gray-400">Накопительный итог</span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                        <div class="p-3 rounded-xl bg-brand-card/60 border border-brand-border space-y-2">
-                            <div class="font-bold text-white flex items-center justify-between">
-                                <span>Vladimir</span>
-                                <span id="vlad-backtest-count" class="text-amber-400">0 мес.</span>
-                            </div>
-                            <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
-                                <div id="vlad-backtest-bar" class="bg-amber-400 h-full w-0 transition-all duration-500"></div>
-                            </div>
-                            <div class="text-[10px] text-gray-400">План квартала (макс. 24 мес.)</div>
-                        </div>
-
-                        <div class="p-3 rounded-xl bg-brand-card/60 border border-brand-border space-y-2">
-                            <div class="font-bold text-white flex items-center justify-between">
-                                <span>Max</span>
-                                <span id="max-backtest-count" class="text-amber-400">0 мес.</span>
-                            </div>
-                            <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
-                                <div id="max-backtest-bar" class="bg-amber-400 h-full w-0 transition-all duration-500"></div>
-                            </div>
-                            <div class="text-[10px] text-gray-400">План квартала (макс. 24 мес.)</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Архив скриншотов -->
-                <div class="p-4 rounded-xl bg-brand-dark/60 border border-brand-border space-y-3">
-                    <div class="flex items-center justify-end">
-                        <h4 class="text-xs font-bold text-white flex items-center space-x-2 mr-auto">
-                            <i class="fa-solid fa-images text-amber-400"></i>
-                            <span>Архив скриншотов бэктестов</span>
-                        </h4>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="backtest-archive-grid">
-                        <!-- Колонки подставляются динамически -->
                     </div>
                 </div>
             </div>
+
+            <!-- Прогресс за эти выходные -->
+            <div class="p-3 rounded-xl bg-brand-dark/40 border border-brand-border/60 space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-300 font-medium">Прогресс за эти выходные:</span>
+                    <span id="weekend-session-status" class="text-amber-400 font-bold">Загрузите бэктесты</span>
+                </div>
+                <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
+                    <div id="weekend-session-bar" class="bg-gradient-to-r from-amber-500 to-emerald-400 h-full w-0 transition-all duration-500"></div>
+                </div>
+            </div>
+
+            <!-- Статистика за текущие выходные -->
+            <div class="p-4 rounded-xl bg-brand-dark/80 border border-brand-border space-y-3">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                        <i class="fa-solid fa-chart-column"></i>
+                        <span>Статистика бэктестов за выходные</span>
+                    </h4>
+                    <!-- Сдаю ID для вывода дат справа -->
+                    <span id="weekend-dates-label" class="text-[10px] text-gray-400 font-medium">Загрузка дат...</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div class="p-3 rounded-xl bg-brand-card/60 border border-brand-border space-y-2">
+                        <div class="font-bold text-white flex items-center justify-between">
+                            <span>Vladimir</span>
+                            <span id="vlad-weekend-count" class="text-amber-400">0 мес.</span>
+                        </div>
+                        <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
+                            <div id="vlad-weekend-bar" class="bg-amber-400 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                        <div class="text-[10px] text-gray-400">Цель: 2 месяца за эти выходные</div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-brand-card/60 border border-brand-border space-y-2">
+                        <div class="font-bold text-white flex items-center justify-between">
+                            <span>Max</span>
+                            <span id="max-weekend-count" class="text-amber-400">0 мес.</span>
+                        </div>
+                        <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
+                            <div id="max-weekend-bar" class="bg-amber-400 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                        <div class="text-[10px] text-gray-400">Цель: 2 месяца за эти выходные</div>
+                    </div>
+                </div>
+            </div>
+
+           <div class="pt-2 border-t border-brand-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+                    <div class="text-xs text-gray-400">
+                        Уровень полезности: <span id="weekend-usefulness-score" class="font-bold text-amber-400">0%</span>
+                    </div>
+                </div>
+                <button onclick="saveWeekendActivity()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Зафиксировать и Сохранить</span>
+                </button>
+            </div>
+
+            <!-- Квартальная статистика -->
+            <div class="p-4 rounded-xl bg-brand-dark/80 border border-brand-border space-y-3">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center space-x-1.5">
+                        <i class="fa-solid fa-chart-column"></i>
+                        <span>Статистика бэктестов (Квартал / 3 месяца)</span>
+                    </h4>
+                    <!-- Добавили id, чтобы менять текст через JavaScript -->
+                    <span id="quarter-dates-label" class="text-[10px] text-gray-400">Накопительный итог</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div class="p-3 rounded-xl bg-brand-card/60 border border-brand-border space-y-2">
+                        <div class="font-bold text-white flex items-center justify-between">
+                            <span>Vladimir</span>
+                            <span id="vlad-backtest-count" class="text-amber-400">0 мес.</span>
+                        </div>
+                        <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
+                            <div id="vlad-backtest-bar" class="bg-amber-400 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                        <div class="text-[10px] text-gray-400">План квартала (макс. 24 мес.)</div>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-brand-card/60 border border-brand-border space-y-2">
+                        <div class="font-bold text-white flex items-center justify-between">
+                            <span>Max</span>
+                            <span id="max-backtest-count" class="text-amber-400">0 мес.</span>
+                        </div>
+                        <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
+                            <div id="max-backtest-bar" class="bg-amber-400 h-full w-0 transition-all duration-500"></div>
+                        </div>
+                        <div class="text-[10px] text-gray-400">План квартала (макс. 24 мес.)</div>
+                    </div>
+                </div>
+            </div>
+
+           <!-- Архив скриншотов (динамические колонки: активный пользователь слева, брат справа) -->
+            <div class="p-4 rounded-xl bg-brand-dark/60 border border-brand-border space-y-3">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-xs font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-images text-amber-400"></i>
+                        <span>Архив скриншотов бэктестов</span>
+                    </h4>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="backtest-archive-grid">
+                    <!-- Колонки подставляются динамически через JavaScript -->
+                </div>
+            </div>
+            
         </div>
     </div>
 
@@ -1277,7 +1241,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                 rulesList.forEach((rule, idx) => {
                     const btn = document.createElement('div');
                     // Добавили relative hover:z-20, чтобы карточка при наведении и подъеме перекрывала соседей
-                    btn.className = "glass-card p-3.5 mx-2 sm:mx-3 rounded-xl border border-brand-border hover:border-amber-400/50 cursor-pointer transition flex items-center justify-between font-medium group relative hover:z-20";
+                    btn.className = "glass-card p-3.5 rounded-xl border border-brand-border hover:border-amber-400/50 cursor-pointer transition flex items-center justify-between font-medium group relative hover:z-20";
                     btn.innerHTML = `
                         <div class="flex items-center space-x-2 min-w-0 pr-2">
                             <span class="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-[11px] border border-amber-500/20 flex-shrink-0">${idx}</span>
@@ -1353,14 +1317,11 @@ const DB_NODE_NAME = 'reports_vladimir';
             updateUserUI();
             initRulesAndErrors();
             loadFirebaseConfig();
-            loadSavedChecklistState();
             initSessionTimer();
-            updateWeekendCountdown();
-            renderReportsFeed(); // <--- Запускаем первичный рендеринг (покажет анимацию ожидания базы)
-            
+            updateWeekendCountdown(); // <--- Добавь сюда
             setInterval(() => {
                 initSessionTimer();
-                updateWeekendCountdown();
+                updateWeekendCountdown(); // <--- И сюда каждую секунду
             }, 1000); 
         });
 
@@ -2173,19 +2134,6 @@ const DB_NODE_NAME = 'reports_vladimir';
 
       // Функция расчета и рендеринга склонности к системной торговле за текущую неделю
         function updateMonthlyStats() {
-            const gridContainer = document.getElementById('monthly-stats-grid');
-            
-            // Если соединение с Firebase активно, но данные еще не получены, показываем анимацию загрузки
-            if (gridContainer && isFirebaseConnected && !window._statsLoadedOnce) {
-                gridContainer.innerHTML = `
-                    <div class="col-span-1 md:col-span-2 glass-panel p-8 text-center text-amber-400 rounded-xl flex items-center justify-center space-x-3">
-                        <i class="fa-solid fa-spinner fa-spin text-xl"></i>
-                        <span class="text-xs font-medium">Загрузка индекса дисциплины из базы данных...</span>
-                    </div>
-                `;
-                return;
-            }
-
             const now = new Date();
             
             // Вычисляем начало текущей недели (Понедельник 09:00 утра)
@@ -2245,6 +2193,7 @@ const DB_NODE_NAME = 'reports_vladimir';
             const otherUser = currentUser === 'Vladimir' ? 'Max' : 'Vladimir';
             const orderedUsers = [currentUser, otherUser];
 
+            const gridContainer = document.getElementById('monthly-stats-grid');
             if (!gridContainer) return;
             gridContainer.innerHTML = '';
 
@@ -2316,6 +2265,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                     badgeClass = "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30";
                 }
 
+                // Логика текста для строки "Безошибочные дни": число яркое, слово "дня/дней" серое
                 let cleanDaysHtml = "";
                 if (cleanCount === 0) {
                     cleanDaysHtml = `<span class="text-gray-400">Пока ни одного дня</span>`;
@@ -2324,9 +2274,14 @@ const DB_NODE_NAME = 'reports_vladimir';
                     cleanDaysHtml = `<span class="font-bold text-emerald-400">${cleanCount}</span> <span class="text-gray-400">${word}</span>`;
                 }
 
+                // Логика текста для строки "Дней с ошибками": серый фразовый текст, либо красная цифра + серое слово
                 let errorsHtml = "";
                 if (violationCount === 0) {
-                    errorsHtml = `<span class="text-gray-400 font-normal">Пока ни одного дня, отличный результат!</span>`;
+                    if (cleanCount >= 5) {
+                        errorsHtml = `<span class="text-gray-400 font-normal">Ни одного дня, отличный результат!</span>`;
+                    } else {
+                        errorsHtml = `<span class="text-gray-400 font-normal">Пока ни одного дня, отличный результат!</span>`;
+                    }
                 } else {
                     const word = violationCount === 1 ? 'день' : 'дня';
                     errorsHtml = `<span class="font-bold text-rose-400">${violationCount}</span> <span class="text-gray-400">${word}</span>`;
@@ -2339,22 +2294,26 @@ const DB_NODE_NAME = 'reports_vladimir';
                                 <i class="fa-solid fa-user ${iconColor}"></i>
                                 <span>${name}</span>
                             </span>
-                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${badgeClass}" style="margin-left: 1rem; text-align: center;">${statusLabel} (${filledSteps}/6)</span>
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${badgeClass}" style="margin-left: 1rem;">${statusLabel} (${filledSteps}/6)</span>
                         </div>
                         <div class="space-y-1 text-xs text-gray-300">
+                            <!-- Строка 1: Пройденные шаги -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Пройдено шагов за неделю:</span>
                                 <span class="font-bold ${hasRebound ? 'text-rose-400' : 'text-amber-400'}">${filledSteps} <span class="text-gray-400 font-normal">из 6</span> ${hasRebound ? '<span class="text-rose-400 font-semibold">(откат -1)</span>' : ''}</span>
                             </div>
+                            <!-- Строка 2: Безошибочные дни -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Безошибочные дни:</span>
                                 <div>${cleanDaysHtml}</div>
                             </div>
+                            <!-- Строка 3: Дней с ошибками -->
                             <div class="flex justify-between">
                                 <span class="text-gray-400">Дней с ошибками:</span>
                                 <div>${errorsHtml}</div>
                             </div>
                         </div>
+                        <!-- Шкала прогресса -->
                         <div class="w-full bg-brand-dark h-2 rounded-full overflow-hidden border border-brand-border">
                             <div class="${barGradient} h-full transition-all duration-500" style="width: ${percent}%"></div>
                         </div>
@@ -2369,21 +2328,20 @@ const DB_NODE_NAME = 'reports_vladimir';
             updateMonthlyStats();
             const container = document.getElementById('reports-feed');
             if (!container) return;
+            container.innerHTML = '';
 
-            // Если соединение с Firebase активно, но лента пуста и данные еще ждем, 
-            // показываем анимацию загрузки в Журнале сессий
-            if (isFirebaseConnected && reportsHistory.length === 0 && !window._reportsLoadedOnce) {
+            document.getElementById('reports-count').innerText = `${reportsHistory.length} записей`;
+
+            if (reportsHistory.length === 0) {
                 container.innerHTML = `
-                    <div class="glass-panel p-8 text-center text-amber-400 rounded-xl flex items-center justify-center space-x-3">
-                        <i class="fa-solid fa-spinner fa-spin text-xl"></i>
-                        <span class="text-xs font-medium">Загрузка журнала сессий из базы данных...</span>
+                    <div class="glass-panel p-8 text-center text-gray-400 rounded-xl">
+                        <i class="fa-solid fa-folder-open text-3xl mb-2 text-gray-600"></i>
+                        <p class="text-xs">Журнал пока пуст. Будьте первым, кто сдаст отчёт за сегодня!</p>
                     </div>
                 `;
                 return;
             }
 
-            container.innerHTML = '';
-            document.getElementById('reports-count').innerText = `${reportsHistory.length} записей`;
             reportsHistory.forEach(item => {
                 const isClean = item.compliance === 'clean';
                 
@@ -2624,9 +2582,10 @@ const DB_NODE_NAME = 'reports_vladimir';
                 if (isHidden) {
                     activeRuleIndex = null; // сбрасываем при открытии на главный список
                     renderRulesModalList();
+                    modal.classList.remove('hidden');
                     
-                    // Используем единый метод открытия с остановкой Lenis и блокировкой фона
-                    openModal('rule-modal');
+                    // Блокируем прокрутку фона сайта
+                    document.body.style.overflow = 'hidden';
 
                     // Изолируем скролл внутри модалки от внешних преград
                     const modalContent = modal.querySelector('#rule-modal-content-container');
@@ -2642,8 +2601,10 @@ const DB_NODE_NAME = 'reports_vladimir';
                         }, { passive: false });
                     }
                 } else {
-                    // Используем единый метод закрытия
-                    closeModal('rule-modal');
+                    modal.classList.add('hidden');
+                    
+                    // Возвращаем прокрутку фона
+                    document.body.style.overflow = '';
                 }
             }
         }
@@ -2693,7 +2654,6 @@ const DB_NODE_NAME = 'reports_vladimir';
                 dbInstance = window.fbSDK.getDatabase(app);
                 dbRef = window.fbSDK.ref(dbInstance, DB_NODE_NAME);
 
-             // СЛУШАТЕЛЬ ОСНОВНЫХ ОТЧЁТОВ
                 window.fbSDK.onValue(dbRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
@@ -2704,50 +2664,9 @@ const DB_NODE_NAME = 'reports_vladimir';
                     } else {
                         reportsHistory = [];
                     }
-                    window._reportsLoadedOnce = true; // Флаг: журнал получен
-                    window._statsLoadedOnce = true;  // Флаг: статистика получена
                     renderReportsFeed();
                 });
 
-                // СЛУШАТЕЛЬ БЭКТЕСТОВ (Общая база с разделением по авторам)
-                const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
-                window.fbSDK.onValue(backtestRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        const allBacktests = Object.entries(data).map(([key, val]) => ({
-                            ...val,
-                            fbKey: key
-                        }));
-                        localStorage.setItem('local_backtest_reports', JSON.stringify(allBacktests));
-                    } else {
-                        localStorage.setItem('local_backtest_reports', JSON.stringify([]));
-                    }
-                    renderBacktestStats();
-                    renderBacktestHistory();
-                });
-// СЛУШАТЕЛЬ ЧЕКБОКСОВ ВЫХОДНЫХ (Для Vladimir и Max)
-                ['Vladimir', 'Max'].forEach(userName => {
-                    const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${userName}`);
-                    
-                    // Показываем спиннер загрузки в главном блоке при старте
-                    if (userName === currentUser) {
-                        const sessionStatus = document.getElementById('weekend-session-status');
-                        if (sessionStatus) {
-                            sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Синхронизация с облаком...</span></span>';
-                        }
-                    }
-
-                    window.fbSDK.onValue(checkRef, (snapshot) => {
-                        const data = snapshot.val();
-                        if (data) {
-                            localStorage.setItem(`weekend_checklist_${userName}`, JSON.stringify(data));
-                        }
-                        if (userName === currentUser) {
-                            loadSavedChecklistState();
-                        }
-                    });
-                });
-                
                 isFirebaseConnected = true;
                 const badge = document.getElementById('sync-status-badge');
                 badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/35";
@@ -2782,8 +2701,6 @@ const DB_NODE_NAME = 'reports_vladimir';
             } else {
                 reportsHistory = [];
             }
-            window._reportsLoadedOnce = true;
-            window._statsLoadedOnce = true;
             renderReportsFeed();
         }
 
@@ -2868,10 +2785,13 @@ function closeWeekendModal() {
             const c3 = document.getElementById('chk-3')?.checked ? 1 : 0;
             const totalChecks = c1 + c2 + c3;
 
+            // Проверяем, сохранены ли уже бэктесты за сегодня в архиве
             const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
-            const { satStr, sunStr } = getCurrentWeekendDates();
-            const weekendSaved = backtests.filter(item => (item.date === satStr || item.date === sunStr) && item.author === currentUser);
+            const now = new Date();
+            const todayStr = formatDate(now.getTime());
+            const weekendSaved = backtests.filter(item => item.date === todayStr && item.author === currentUser);
 
+            // Общее количество фото (сохраненные + те, что сейчас в памяти перед сохранением)
             let totalPhotos = weekendSaved.length;
             if (backtestImage1) totalPhotos++;
             if (backtestImage2) totalPhotos++;
@@ -2893,6 +2813,7 @@ function closeWeekendModal() {
             const sessionStatus = document.getElementById('weekend-session-status');
             if (sessionBar) sessionBar.style.width = `${score}%`;
             
+            // Динамический текст в плашке статуса бэктестов
             const pillEl = document.getElementById('weekend-status-pill');
             if (pillEl) {
                 if (totalPhotos === 0) {
@@ -2909,13 +2830,13 @@ function closeWeekendModal() {
 
             if (sessionStatus) {
                 if (score === 100) {
-                    sessionStatus.innerHTML = '<span class="text-emerald-400 font-bold block text-center w-full">🔥 Максимальная польза (100%)!</span>';
+                    sessionStatus.innerHTML = '<span class="text-emerald-400 font-bold">🔥 Максимальная польза (100%)!</span>';
                 } else if (weekendSaved.length > 0) {
-                    sessionStatus.innerHTML = `<span class="text-amber-400 font-bold block text-center w-full">Слава Богу! Результаты выходных зафиксированы. (${score}%)</span>`;
+                    sessionStatus.innerHTML = `<span class="text-amber-400 font-bold">Слава Богу! Результаты выходных зафиксированы. (${score}%)</span>`;
                 } else if (score >= 85) {
-                    sessionStatus.innerHTML = '<span class="text-amber-300 block text-center w-full">Загрузите 2-й месяц для 100%</span>';
+                    sessionStatus.innerHTML = '<span class="text-amber-300">Загрузите 2-й месяц для 100%</span>';
                 } else {
-                    sessionStatus.innerHTML = '<span class="text-gray-300 block text-center w-full">Загрузите бэктесты</span>';
+                    sessionStatus.innerText = 'Загрузите бэктесты';
                 }
             }
 
@@ -2956,12 +2877,11 @@ function closeWeekendModal() {
                     document.getElementById('backtest-prev-wrap-2').classList.remove('hidden');
                 }
                 updateWeekendProgress();
-                updateSaveButtonState(); // <--- Возвращаем кнопку в активный режим для сохранения нового файла
             };
             reader.readAsDataURL(file);
         }
 
-      function saveWeekendActivity() {
+        function saveWeekendActivity() {
             if (!backtestImage1 && !backtestImage2) {
                 const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
                 const now = new Date();
@@ -2975,55 +2895,36 @@ function closeWeekendModal() {
             }
 
             const timestamp = Date.now();
+            let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             
-            if (isFirebaseConnected && dbInstance) {
-                const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
-                
-                let promises = [];
-                if (backtestImage1) {
-                    const newEntry1 = { id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 };
-                    promises.push(window.fbSDK.push(backtestRef, newEntry1));
-                }
-                if (backtestImage2) {
-                    const newEntry2 = { id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 };
-                    promises.push(window.fbSDK.push(backtestRef, newEntry2));
-                }
-
-                Promise.all(promises).then(() => {
-                    backtestImage1 = null;
-                    backtestImage2 = null;
-                    updateWeekendProgress();
-                    renderBacktestStats();
-                    renderBacktestHistory();
-                    checkAndTransformBacktestSection();
-                }).catch(err => {
-                    console.error("Firebase backtest save error:", err);
-                    alert("Ошибка сохранения бэктестов в базу.");
-                });
-            } else {
-                // Запасной вариант для локального режима
-                let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
-                if (backtestImage1) backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 });
-                if (backtestImage2) backtests.unshift({ id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 });
-                localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
-
-                backtestImage1 = null;
-                backtestImage2 = null;
-                updateWeekendProgress();
-                renderBacktestStats();
-                renderBacktestHistory();
-                checkAndTransformBacktestSection();
+            if (backtestImage1) {
+                backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 });
             }
+            if (backtestImage2) {
+                backtests.unshift({ id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 });
+            }
+
+            localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
+
+            // Очищаем временные переменные загрузки только ПОСЛЕ успешного сохранения в localStorage
+            backtestImage1 = null;
+            backtestImage2 = null;
+
+            updateWeekendProgress();
+            renderBacktestStats();
+            renderBacktestHistory();
+            checkAndTransformBacktestSection();
         }
-function renderBacktestStats() {
+
+      function renderBacktestStats() {
             const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             const now = new Date();
             const currentQuarter = Math.floor(now.getMonth() / 3);
             const currentYear = now.getFullYear();
 
             // Статистика за текущие выходные
-            const { satStr, sunStr } = getCurrentWeekendDates();
-            const weekendBacktests = backtests.filter(item => item.date === satStr || item.date === sunStr);
+            const todayStr = formatDate(now.getTime());
+            const weekendBacktests = backtests.filter(item => item.date === todayStr);
             let vladWeekCount = weekendBacktests.filter(i => i.author === 'Vladimir').length;
             let maxWeekCount = weekendBacktests.filter(i => i.author === 'Max').length;
 
@@ -3048,6 +2949,7 @@ function renderBacktestStats() {
             document.getElementById('max-backtest-count').innerText = `${maxCount} / ${maxQuarterTarget} мес.`;
             document.getElementById('max-backtest-bar').style.width = `${Math.min(100, (maxCount / maxQuarterTarget) * 100)}%`;
 
+            // Динамический вывод месяцев текущего квартала вместо «Накопительный итог»
             const quarterLabels = [
                 "Январь — Март",
                 "Апрель — Июнь",
@@ -3058,8 +2960,6 @@ function renderBacktestStats() {
             if (quarterLabelEl) {
                 quarterLabelEl.innerText = quarterLabels[currentQuarter];
             }
-
-            updateSaveButtonState();
         }
 
         // Состояние режима редактирования для архивов
@@ -3072,29 +2972,16 @@ function renderBacktestStats() {
             archiveEditState[author] = !archiveEditState[author];
             renderBacktestHistory();
         }
-        
-function deleteArchivedBacktest(event, id, fbKey) {
+
+        function deleteArchivedBacktest(event, id) {
             if (event && event.stopPropagation) event.stopPropagation();
 
-            if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
-                const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests/${fbKey}`);
-                window.fbSDK.remove(itemRef).then(() => {
-                    renderBacktestStats();
-                    renderBacktestHistory();
-                    updateSaveButtonState();
-                }).catch(err => {
-                    console.error("Backtest delete error:", err);
-                    alert("Ошибка при удалении бэктеста из базы данных.");
-                });
-            } else {
-                let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
-                backtests = backtests.filter(item => String(item.id) !== String(id));
-                localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
+            let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+            backtests = backtests.filter(item => String(item.id) !== String(id));
+            localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
 
-                renderBacktestStats();
-                renderBacktestHistory();
-                updateSaveButtonState();
-            }
+            renderBacktestStats();
+            renderBacktestHistory();
         }
 
        
@@ -3181,10 +3068,10 @@ function deleteArchivedBacktest(event, id, fbKey) {
                 let mainImagesHtml = '';
                 mainItems.forEach((item, idx) => {
                     const deleteBtnHtml = isEditing ? `
-    <button onclick="deleteArchivedBacktest(event, '${item.id}', '${item.fbKey || ''}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
-        <i class="fa-solid fa-xmark"></i>
-    </button>
-` : '';
+                        <button onclick="deleteArchivedBacktest(event, '${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    ` : '';
 
                     mainImagesHtml += `
                         <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Кликните для увеличения'}">
@@ -3200,10 +3087,10 @@ function deleteArchivedBacktest(event, id, fbKey) {
                     extraItems.forEach((item, idx) => {
                         const actualIdx = idx + 2;
                         const deleteBtnHtml = isEditing ? `
-    <button onclick="deleteArchivedBacktest(event, '${item.id}', '${item.fbKey || ''}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
-        <i class="fa-solid fa-xmark"></i>
-    </button>
-` : '';
+                            <button onclick="deleteArchivedBacktest(event, '${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        ` : '';
 
                         extraImagesHtml += `
                             <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Дополнительный бэктест'}">
@@ -3260,106 +3147,69 @@ function deleteArchivedBacktest(event, id, fbKey) {
             onStepCheckboxChange(num);
         }
 
-       // Восстановление состояния чекбоксов из localStorage или Firebase
-     function loadSavedChecklistState() {
-            // Анимация загрузки в первом главном блоке («Склонность к системной торговле»)
-            const sessionStatus = document.getElementById('weekend-session-status');
-            if (sessionStatus) {
-                sessionStatus.innerHTML = '<span class="text-amber-400 font-medium flex items-center justify-center space-x-2"><i class="fa-solid fa-spinner fa-spin"></i><span>Загрузка данных из облака...</span></span>';
-            }
+        // Восстановление состояния чекбоксов из localStorage
+        function loadSavedChecklistState() {
+            const savedState = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
+            
+            [1, 2, 3].forEach(num => {
+                const chk = document.getElementById(`chk-${num}`);
+                const box = document.getElementById(`step-box-${num}`);
+                const titleEl = document.getElementById(`title-${num}`);
+                const descEl = document.getElementById(`desc-${num}`);
+                const timerLine = document.getElementById(`timer-line-${num}`);
 
-            if (isFirebaseConnected && dbInstance) {
-                const checklistRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${currentUser}`);
-                window.fbSDK.onValue(checklistRef, (snapshot) => {
-                    const data = snapshot.val() || {};
-                    applyChecklistVisuals(data);
-                    updateWeekendProgress();
-                    renderBacktestStats();
-                }, (error) => {
-                    console.error("Firebase checklist read error:", error);
-                    updateWeekendProgress();
-                    renderBacktestStats();
-                });
-            } else {
-                // Режим localStorage
-                const saved = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
-                applyChecklistVisuals(saved);
-                updateWeekendProgress();
-                renderBacktestStats();
-            }
+                if (savedState[`chk_${num}`]) {
+                    if (chk) {
+                        chk.disabled = false;
+                        chk.checked = true;
+                    }
+                    if (box) {
+                        box.classList.remove('opacity-40', 'pointer-events-none', 'filter', 'grayscale');
+                        box.classList.add('border-amber-400/60', 'bg-amber-500/10');
+                    }
+                    if (num > 1 && stepLessons[num]) {
+                        if (titleEl) {
+                            titleEl.innerText = stepLessons[num].title;
+                            titleEl.className = "text-white text-xs block mb-0.5";
+                        }
+                        if (descEl) {
+                            descEl.innerText = stepLessons[num].desc;
+                            descEl.className = "text-xs text-gray-300 leading-relaxed";
+                        }
+                        if (timerLine) {
+                            timerLine.style.width = '100%';
+                            timerLine.style.backgroundColor = '#10B981';
+                        }
+                    }
+                } else if (num > 1 && (savedState[`chk_${num-1}`] || (num === 2 && savedState['chk_1']))) {
+                    // Если предыдущий чекбокс был пройден ранее
+                    if (box) box.classList.remove('opacity-40', 'pointer-events-none', 'filter', 'grayscale');
+                    if (titleEl) {
+                        titleEl.innerText = stepLessons[num].title;
+                        titleEl.className = "text-white text-xs block mb-0.5";
+                    }
+                    if (descEl) {
+                        descEl.innerText = stepLessons[num].desc;
+                        descEl.className = "text-xs text-gray-300 leading-relaxed";
+                    }
+                    if (chk) chk.disabled = false;
+                    if (timerLine) {
+                        timerLine.style.width = '100%';
+                        timerLine.style.backgroundColor = '#10B981';
+                    }
+                }
+            });
         }
 
-        // Вспомогательная функция отрисовки чекбоксов, текстов и мгновенного скрытия линий таймера
-        function applyChecklistVisuals(data) {
-            const chk1 = !!data.chk_1;
-            const chk2 = !!data.chk_2;
-            const chk3 = !!data.chk_3;
-
-            // Шаг 1
-            const c1 = document.getElementById('chk-1');
-            const b1 = document.getElementById('step-box-1');
-            if (c1) c1.checked = chk1;
-            if (b1) {
-                if (chk1) b1.classList.add('border-amber-400/60', 'bg-amber-500/10');
-                else b1.classList.remove('border-amber-400/60', 'bg-amber-500/10');
-            }
-
-            // Шаг 2 (если первый или второй шаг выполнен — разблокируем)
-            const b2 = document.getElementById('step-box-2');
-            const title2 = document.getElementById('title-2');
-            const desc2 = document.getElementById('desc-2');
-            const timer2 = document.getElementById('timer-line-2');
-            const c2 = document.getElementById('chk-2');
-
-            if (chk1 || chk2) {
-                if (b2) b2.classList.remove('opacity-40', 'pointer-events-none', 'filter', 'grayscale');
-                if (title2) { title2.innerText = stepLessons[2].title; title2.className = "text-white text-xs block mb-0.5"; }
-                if (desc2) { desc2.innerText = stepLessons[2].desc; desc2.className = "text-xs text-gray-300 leading-relaxed"; }
-                if (c2) c2.disabled = false;
-                if (timer2) timer2.style.width = '0%'; // Убираем линию таймера при загрузке
-            }
-            if (c2) c2.checked = chk2;
-            if (b2) {
-                if (chk2) b2.classList.add('border-amber-400/60', 'bg-amber-500/10');
-                else if (chk1) b2.classList.remove('border-amber-400/60', 'bg-amber-500/10');
-            }
-
-            // Шаг 3 (если второй или третий шаг выполнен — разблокируем)
-            const b3 = document.getElementById('step-box-3');
-            const title3 = document.getElementById('title-3');
-            const desc3 = document.getElementById('desc-3');
-            const timer3 = document.getElementById('timer-line-3');
-            const c3 = document.getElementById('chk-3');
-
-            if (chk2 || chk3) {
-                if (b3) b3.classList.remove('opacity-40', 'pointer-events-none', 'filter', 'grayscale');
-                if (title3) { title3.innerText = stepLessons[3].title; title3.className = "text-white text-xs block mb-0.5"; }
-                if (desc3) { desc3.innerText = stepLessons[3].desc; desc3.className = "text-xs text-gray-300 leading-relaxed"; }
-                if (c3) c3.disabled = false;
-                if (timer3) timer3.style.width = '0%'; // Убираем линию таймера при загрузке
-            }
-            if (c3) c3.checked = chk3;
-            if (b3) {
-                if (chk3) b3.classList.add('border-amber-400/60', 'bg-amber-500/10');
-                else if (chk2) b3.classList.remove('border-amber-400/60', 'bg-amber-500/10');
-            }
-        }
         function onStepCheckboxChange(num, event) {
             if (event) event.stopPropagation();
             const chk = document.getElementById(`chk-${num}`);
             const box = document.getElementById(`step-box-${num}`);
 
+            // Сохраняем состояние чекбокса
             let savedState = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
             savedState[`chk_${num}`] = chk.checked;
             localStorage.setItem(`weekend_checklist_${currentUser}`, JSON.stringify(savedState));
-
-            // Синхронизация с Firebase в отдельный узел по имени пользователя
-            if (isFirebaseConnected && dbInstance) {
-                const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${currentUser}`);
-                window.fbSDK.set(checkRef, savedState).catch(err => {
-                    console.error("Firebase checklist sync error:", err);
-                });
-            }
 
             if (chk.checked) {
                 box.classList.add('border-amber-400/60', 'bg-amber-500/10');
@@ -3390,19 +3240,14 @@ function deleteArchivedBacktest(event, id, fbKey) {
             descEl.className = "text-xs text-gray-300 leading-relaxed";
 
             // Линия таймера чтения за 17 секунд
-            if (timerLine) {
-                timerLine.style.width = '0%';
-                void timerLine.offsetWidth;
-                timerLine.style.transition = 'width 17s linear';
-                timerLine.style.width = '100%';
-            }
+            timerLine.style.width = '0%';
+            void timerLine.offsetWidth;
+            timerLine.style.transition = 'width 17s linear';
+            timerLine.style.width = '100%';
 
             setTimeout(() => {
                 chk.disabled = false;
-                if (timerLine) {
-                    timerLine.style.transition = 'width 0.4s ease';
-                    timerLine.style.width = '0%'; // Мгновенно убираем линию после окончания отсчета, чтобы не мешала
-                }
+                timerLine.style.backgroundColor = '#10B981';
             }, 17000);
         }
 
@@ -3442,8 +3287,8 @@ function deleteArchivedBacktest(event, id, fbKey) {
                 `;
             }
         }
-        
-function handleExtraBacktest(event) {
+
+        function handleExtraBacktest(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -3451,38 +3296,13 @@ function handleExtraBacktest(event) {
             reader.onload = function(e) {
                 const timestamp = Date.now();
                 let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
-                
-                // Добавляем новый скриншот
                 backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
                 localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
-
-                if (isFirebaseConnected && dbInstance) {
-                    const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
-                    window.fbSDK.push(backtestRef, { id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
-                }
-
-                // Пересчитываем статистику и перерисовываем архив
                 renderBacktestStats();
                 renderBacktestHistory();
-                updateSaveButtonState();
-
-                // Сбрасываем input, чтобы можно было выбрать следующий файл
-                event.target.value = '';
-
-                // Модалка вызывается СТРОГО по факту того, что данные записаны и архив обновился
-                openExtraBacktestSuccessModal();
+                alert('Дополнительный бэктест успешно сохранен в архив и статистику!');
             };
             reader.readAsDataURL(file);
-        }
-        
-        function openExtraBacktestSuccessModal() {
-            const modal = document.getElementById('extra-backtest-success-modal');
-            if (modal) modal.classList.remove('hidden');
-        }
-
-        function closeExtraBacktestSuccessModal() {
-            const modal = document.getElementById('extra-backtest-success-modal');
-            if (modal) modal.classList.add('hidden');
         }
 
         // Таймер обратного отсчета до старта сессии Франкфурта (понедельник, 09:00)
@@ -3769,13 +3589,14 @@ function openModal(modalId) {
 
     // Блокируем прокрутку основного фона страницы
     document.body.style.overflow = 'hidden';
+    modal.classList.ون; // остаётся как было (.classList.remove('hidden'))
     modal.classList.remove('hidden');
 
     // Обязательно останавливаем глобальный Lenis, чтобы он не ломал скролл в модалке
     if (typeof lenis !== 'undefined' && lenis !== null) {
         lenis.stop();
     }
-}    
+}
 
 // Универсальное закрытие любой модалки с возобновлением Lenis
 function closeModal(modalId) {
@@ -3791,68 +3612,6 @@ function closeModal(modalId) {
         lenis.start();
     }
 }
-
-        // Получение дат субботы и воскресенья текущих выходных
-        function getCurrentWeekendDates() {
-            const now = new Date();
-            const day = now.getDay(); // 0: ВС, 1: ПН, ..., 6: СБ
-            let sat = new Date(now);
-            let sun = new Date(now);
-
-            if (day === 6) {
-                sun.setDate(sat.getDate() + 1);
-            } else if (day === 0) {
-                sat.setDate(now.getDate() - 1);
-            } else {
-                // Если будний день, целимся на прошедшие или ближайшие выходные
-                sat.setDate(now.getDate() - (day + 1));
-                sun.setDate(sat.getDate() + 1);
-            }
-            return {
-                satStr: formatDate(sat.getTime()),
-                sunStr: formatDate(sun.getTime())
-            };
-        }
-
-        // Проверка, сохранял ли пользователь бэктесты в эти выходные
-        function hasUserSavedThisWeekend(author) {
-            const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
-            const { satStr, sunStr } = getCurrentWeekendDates();
-            return backtests.some(item => item.author === author && (item.date === satStr || item.date === sunStr));
-        }
-
-        // Обновление текста и стиля кнопки сохранения
-        function updateSaveButtonState() {
-            const btn = document.getElementById('save-weekend-btn');
-            if (!btn) return;
-
-            // Если прямо сейчас в памяти висят новые выбранные файлы, которые еще не улетели в базу/архив
-            const hasUnsavedImages = (backtestImage1 !== null || backtestImage2 !== null);
-            const isSaved = hasUserSavedThisWeekend(currentUser) && !hasUnsavedImages;
-
-            if (isSaved) {
-                btn.innerHTML = `<i class="fa-solid fa-check-double text-black"></i><span>Сохранено</span>`;
-                btn.className = "w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-1.5";
-            } else {
-                btn.innerHTML = `<i class="fa-solid fa-check"></i><span>Зафиксировать и Сохранить</span>`;
-                btn.className = "w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-1.5";
-            }
-        }
-
-        // Функция включения анимации ожидания на блоках при старте
-        function showLoadingSkeletons() {
-            const vladWeekEl = document.getElementById('vlad-weekend-count');
-            const maxWeekEl = document.getElementById('max-weekend-count');
-            
-            if (vladWeekEl) vladWeekEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-amber-400"></i>';
-            if (maxWeekEl) maxWeekEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-amber-400"></i>';
-
-            // Можно также подсветить плашки легким пульсом
-            const statsCards = document.querySelectorAll('.glass-panel');
-            statsCards.forEach(card => {
-                // Добавляем класс мягкого сияния загрузки, если нужно
-            });
-        }
     </script>
     
 </body>
