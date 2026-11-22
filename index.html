@@ -717,6 +717,26 @@
         </div>
     </div>
 
+    <!-- Кастомная модалка: Дополнительный бэктест сохранен -->
+    <div id="extra-backtest-success-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel max-w-sm w-full rounded-2xl p-6 border border-emerald-500/30 text-center space-y-4 shadow-2xl">
+            <div class="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/30">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-white text-base">Успешно сохранено!</h3>
+                <p class="text-xs text-gray-300 mt-2 leading-relaxed">
+                    Дополнительный бэктест успешно зафиксирован в архиве и добален в общую статистику!
+                </p>
+            </div>
+            <div class="pt-2">
+                <button onclick="closeExtraBacktestSuccessModal()" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold py-3 sm:py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20">
+                    Отлично
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Кастомная модалка: Предупреждение об отсутствующем скриншоте -->
     <div id="screenshot-warning-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel max-w-sm w-full rounded-2xl p-6 border border-amber-500/30 text-center space-y-4 shadow-2xl">
@@ -916,10 +936,10 @@
                         Уровень полезности: <span id="weekend-usefulness-score" class="font-bold text-amber-400">0%</span>
                     </div>
                 </div>
-                <button onclick="saveWeekendActivity()" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-1.5">
-                    <i class="fa-solid fa-check"></i>
-                    <span>Зафиксировать и Сохранить</span>
-                </button>
+                <button onclick="saveWeekendActivity()" id="save-weekend-btn" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-1.5">
+    <i class="fa-solid fa-check"></i>
+    <span>Зафиксировать и Сохранить</span>
+</button>
             </div>
 
             <!-- Квартальная статистика -->
@@ -2294,7 +2314,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                                 <i class="fa-solid fa-user ${iconColor}"></i>
                                 <span>${name}</span>
                             </span>
-                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${badgeClass}" style="margin-left: 1rem;">${statusLabel} (${filledSteps}/6)</span>
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${badgeClass}" style="margin-left: 1rem; text-align: center;">${statusLabel} (${filledSteps}/6)</span>
                         </div>
                         <div class="space-y-1 text-xs text-gray-300">
                             <!-- Строка 1: Пройденные шаги -->
@@ -2654,6 +2674,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                 dbInstance = window.fbSDK.getDatabase(app);
                 dbRef = window.fbSDK.ref(dbInstance, DB_NODE_NAME);
 
+             // СЛУШАТЕЛЬ ОСНОВНЫХ ОТЧЁТОВ
                 window.fbSDK.onValue(dbRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
@@ -2667,6 +2688,38 @@ const DB_NODE_NAME = 'reports_vladimir';
                     renderReportsFeed();
                 });
 
+                // СЛУШАТЕЛЬ БЭКТЕСТОВ (Общая база с разделением по авторам)
+                const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
+                window.fbSDK.onValue(backtestRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const allBacktests = Object.entries(data).map(([key, val]) => ({
+                            ...val,
+                            fbKey: key
+                        }));
+                        localStorage.setItem('local_backtest_reports', JSON.stringify(allBacktests));
+                    } else {
+                        localStorage.setItem('local_backtest_reports', JSON.stringify([]));
+                    }
+                    renderBacktestStats();
+                    renderBacktestHistory();
+                });
+
+                // СЛУШАТЕЛЬ ЧЕКБОКСОВ ВЫХОДНЫХ (Для Vladimir и Max)
+                ['Vladimir', 'Max'].forEach(userName => {
+                    const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${userName}`);
+                    window.fbSDK.onValue(checkRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            localStorage.setItem(`weekend_checklist_${userName}`, JSON.stringify(data));
+                        }
+                        if (userName === currentUser) {
+                            loadSavedChecklistState();
+                            updateWeekendProgress();
+                        }
+                    });
+                });
+                
                 isFirebaseConnected = true;
                 const badge = document.getElementById('sync-status-badge');
                 badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/35";
@@ -2877,11 +2930,12 @@ function closeWeekendModal() {
                     document.getElementById('backtest-prev-wrap-2').classList.remove('hidden');
                 }
                 updateWeekendProgress();
+                updateSaveButtonState(); // <--- Возвращаем кнопку в активный режим для сохранения нового файла
             };
             reader.readAsDataURL(file);
         }
 
-        function saveWeekendActivity() {
+      function saveWeekendActivity() {
             if (!backtestImage1 && !backtestImage2) {
                 const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
                 const now = new Date();
@@ -2895,36 +2949,55 @@ function closeWeekendModal() {
             }
 
             const timestamp = Date.now();
-            let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             
-            if (backtestImage1) {
-                backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 });
+            if (isFirebaseConnected && dbInstance) {
+                const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
+                
+                let promises = [];
+                if (backtestImage1) {
+                    const newEntry1 = { id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 };
+                    promises.push(window.fbSDK.push(backtestRef, newEntry1));
+                }
+                if (backtestImage2) {
+                    const newEntry2 = { id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 };
+                    promises.push(window.fbSDK.push(backtestRef, newEntry2));
+                }
+
+                Promise.all(promises).then(() => {
+                    backtestImage1 = null;
+                    backtestImage2 = null;
+                    updateWeekendProgress();
+                    renderBacktestStats();
+                    renderBacktestHistory();
+                    checkAndTransformBacktestSection();
+                }).catch(err => {
+                    console.error("Firebase backtest save error:", err);
+                    alert("Ошибка сохранения бэктестов в базу.");
+                });
+            } else {
+                // Запасной вариант для локального режима
+                let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+                if (backtestImage1) backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 });
+                if (backtestImage2) backtests.unshift({ id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 });
+                localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
+
+                backtestImage1 = null;
+                backtestImage2 = null;
+                updateWeekendProgress();
+                renderBacktestStats();
+                renderBacktestHistory();
+                checkAndTransformBacktestSection();
             }
-            if (backtestImage2) {
-                backtests.unshift({ id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 });
-            }
-
-            localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
-
-            // Очищаем временные переменные загрузки только ПОСЛЕ успешного сохранения в localStorage
-            backtestImage1 = null;
-            backtestImage2 = null;
-
-            updateWeekendProgress();
-            renderBacktestStats();
-            renderBacktestHistory();
-            checkAndTransformBacktestSection();
         }
-
-      function renderBacktestStats() {
+function renderBacktestStats() {
             const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             const now = new Date();
             const currentQuarter = Math.floor(now.getMonth() / 3);
             const currentYear = now.getFullYear();
 
             // Статистика за текущие выходные
-            const todayStr = formatDate(now.getTime());
-            const weekendBacktests = backtests.filter(item => item.date === todayStr);
+            const { satStr, sunStr } = getCurrentWeekendDates();
+            const weekendBacktests = backtests.filter(item => item.date === satStr || item.date === sunStr);
             let vladWeekCount = weekendBacktests.filter(i => i.author === 'Vladimir').length;
             let maxWeekCount = weekendBacktests.filter(i => i.author === 'Max').length;
 
@@ -2949,7 +3022,6 @@ function closeWeekendModal() {
             document.getElementById('max-backtest-count').innerText = `${maxCount} / ${maxQuarterTarget} мес.`;
             document.getElementById('max-backtest-bar').style.width = `${Math.min(100, (maxCount / maxQuarterTarget) * 100)}%`;
 
-            // Динамический вывод месяцев текущего квартала вместо «Накопительный итог»
             const quarterLabels = [
                 "Январь — Март",
                 "Апрель — Июнь",
@@ -2960,6 +3032,8 @@ function closeWeekendModal() {
             if (quarterLabelEl) {
                 quarterLabelEl.innerText = quarterLabels[currentQuarter];
             }
+
+            updateSaveButtonState();
         }
 
         // Состояние режима редактирования для архивов
@@ -2972,16 +3046,29 @@ function closeWeekendModal() {
             archiveEditState[author] = !archiveEditState[author];
             renderBacktestHistory();
         }
-
-        function deleteArchivedBacktest(event, id) {
+        
+function deleteArchivedBacktest(event, id, fbKey) {
             if (event && event.stopPropagation) event.stopPropagation();
 
-            let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
-            backtests = backtests.filter(item => String(item.id) !== String(id));
-            localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
+            if (isFirebaseConnected && fbKey && fbKey !== 'undefined' && fbKey !== '' && dbInstance) {
+                const itemRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests/${fbKey}`);
+                window.fbSDK.remove(itemRef).then(() => {
+                    renderBacktestStats();
+                    renderBacktestHistory();
+                    updateSaveButtonState();
+                }).catch(err => {
+                    console.error("Backtest delete error:", err);
+                    alert("Ошибка при удалении бэктеста из базы данных.");
+                });
+            } else {
+                let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+                backtests = backtests.filter(item => String(item.id) !== String(id));
+                localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
 
-            renderBacktestStats();
-            renderBacktestHistory();
+                renderBacktestStats();
+                renderBacktestHistory();
+                updateSaveButtonState();
+            }
         }
 
        
@@ -3068,10 +3155,10 @@ function closeWeekendModal() {
                 let mainImagesHtml = '';
                 mainItems.forEach((item, idx) => {
                     const deleteBtnHtml = isEditing ? `
-                        <button onclick="deleteArchivedBacktest(event, '${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    ` : '';
+    <button onclick="deleteArchivedBacktest(event, '${item.id}', '${item.fbKey || ''}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+` : '';
 
                     mainImagesHtml += `
                         <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Кликните для увеличения'}">
@@ -3087,10 +3174,10 @@ function closeWeekendModal() {
                     extraItems.forEach((item, idx) => {
                         const actualIdx = idx + 2;
                         const deleteBtnHtml = isEditing ? `
-                            <button onclick="deleteArchivedBacktest(event, '${item.id}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        ` : '';
+    <button onclick="deleteArchivedBacktest(event, '${item.id}', '${item.fbKey || ''}')" class="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-md z-20 transition transform hover:scale-110" title="Удалить скриншот">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+` : '';
 
                         extraImagesHtml += `
                             <div class="relative group cursor-pointer inline-block mr-1.5 mb-1.5" ${!isEditing ? `onclick="openLightbox('${item.image}')"` : ''} title="${isEditing ? 'Удалить скриншот' : 'Дополнительный бэктест'}">
@@ -3206,10 +3293,17 @@ function closeWeekendModal() {
             const chk = document.getElementById(`chk-${num}`);
             const box = document.getElementById(`step-box-${num}`);
 
-            // Сохраняем состояние чекбокса
             let savedState = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
             savedState[`chk_${num}`] = chk.checked;
             localStorage.setItem(`weekend_checklist_${currentUser}`, JSON.stringify(savedState));
+
+            // Синхронизация с Firebase в отдельный узел по имени пользователя
+            if (isFirebaseConnected && dbInstance) {
+                const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${currentUser}`);
+                window.fbSDK.set(checkRef, savedState).catch(err => {
+                    console.error("Firebase checklist sync error:", err);
+                });
+            }
 
             if (chk.checked) {
                 box.classList.add('border-amber-400/60', 'bg-amber-500/10');
@@ -3287,8 +3381,8 @@ function closeWeekendModal() {
                 `;
             }
         }
-
-        function handleExtraBacktest(event) {
+        
+function handleExtraBacktest(event) {
             const file = event.target.files[0];
             if (!file) return;
 
@@ -3298,11 +3392,30 @@ function closeWeekendModal() {
                 let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
                 backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
                 localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
+
+                if (isFirebaseConnected && dbInstance) {
+                    const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
+                    window.fbSDK.push(backtestRef, { id: timestamp, author: currentUser, date: formatDate(timestamp), image: e.target.result });
+                }
+
                 renderBacktestStats();
                 renderBacktestHistory();
-                alert('Дополнительный бэктест успешно сохранен в архив и статистику!');
+                updateSaveButtonState();
+                
+                // Вместо alert() вызываем нашу стильную модалку
+                openExtraBacktestSuccessModal();
             };
             reader.readAsDataURL(file);
+        }
+
+        function openExtraBacktestSuccessModal() {
+            const modal = document.getElementById('extra-backtest-success-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeExtraBacktestSuccessModal() {
+            const modal = document.getElementById('extra-backtest-success-modal');
+            if (modal) modal.classList.add('hidden');
         }
 
         // Таймер обратного отсчета до старта сессии Франкфурта (понедельник, 09:00)
@@ -3589,14 +3702,13 @@ function openModal(modalId) {
 
     // Блокируем прокрутку основного фона страницы
     document.body.style.overflow = 'hidden';
-    modal.classList.ون; // остаётся как было (.classList.remove('hidden'))
     modal.classList.remove('hidden');
 
     // Обязательно останавливаем глобальный Lenis, чтобы он не ломал скролл в модалке
     if (typeof lenis !== 'undefined' && lenis !== null) {
         lenis.stop();
     }
-}
+}    
 
 // Универсальное закрытие любой модалки с возобновлением Lenis
 function closeModal(modalId) {
@@ -3612,6 +3724,53 @@ function closeModal(modalId) {
         lenis.start();
     }
 }
+
+        // Получение дат субботы и воскресенья текущих выходных
+        function getCurrentWeekendDates() {
+            const now = new Date();
+            const day = now.getDay(); // 0: ВС, 1: ПН, ..., 6: СБ
+            let sat = new Date(now);
+            let sun = new Date(now);
+
+            if (day === 6) {
+                sun.setDate(sat.getDate() + 1);
+            } else if (day === 0) {
+                sat.setDate(now.getDate() - 1);
+            } else {
+                // Если будний день, целимся на прошедшие или ближайшие выходные
+                sat.setDate(now.getDate() - (day + 1));
+                sun.setDate(sat.getDate() + 1);
+            }
+            return {
+                satStr: formatDate(sat.getTime()),
+                sunStr: formatDate(sun.getTime())
+            };
+        }
+
+        // Проверка, сохранял ли пользователь бэктесты в эти выходные
+        function hasUserSavedThisWeekend(author) {
+            const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+            const { satStr, sunStr } = getCurrentWeekendDates();
+            return backtests.some(item => item.author === author && (item.date === satStr || item.date === sunStr));
+        }
+
+        // Обновление текста и стиля кнопки сохранения
+        function updateSaveButtonState() {
+            const btn = document.getElementById('save-weekend-btn');
+            if (!btn) return;
+
+            // Если прямо сейчас в памяти висят новые выбранные файлы, которые еще не улетели в базу/архив
+            const hasUnsavedImages = (backtestImage1 !== null || backtestImage2 !== null);
+            const isSaved = hasUserSavedThisWeekend(currentUser) && !hasUnsavedImages;
+
+            if (isSaved) {
+                btn.innerHTML = `<i class="fa-solid fa-check-double text-black"></i><span>Сохранено</span>`;
+                btn.className = "w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20 flex items-center justify-center space-x-1.5";
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-check"></i><span>Зафиксировать и Сохранить</span>`;
+                btn.className = "w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 py-2.5 rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center space-x-1.5";
+            }
+        }
     </script>
     
 </body>
