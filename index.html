@@ -2654,6 +2654,7 @@ const DB_NODE_NAME = 'reports_vladimir';
                 dbInstance = window.fbSDK.getDatabase(app);
                 dbRef = window.fbSDK.ref(dbInstance, DB_NODE_NAME);
 
+             // СЛУШАТЕЛЬ ОСНОВНЫХ ОТЧЁТОВ
                 window.fbSDK.onValue(dbRef, (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
@@ -2667,6 +2668,38 @@ const DB_NODE_NAME = 'reports_vladimir';
                     renderReportsFeed();
                 });
 
+                // СЛУШАТЕЛЬ БЭКТЕСТОВ (Общая база с разделением по авторам)
+                const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
+                window.fbSDK.onValue(backtestRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        const allBacktests = Object.entries(data).map(([key, val]) => ({
+                            ...val,
+                            fbKey: key
+                        }));
+                        localStorage.setItem('local_backtest_reports', JSON.stringify(allBacktests));
+                    } else {
+                        localStorage.setItem('local_backtest_reports', JSON.stringify([]));
+                    }
+                    renderBacktestStats();
+                    renderBacktestHistory();
+                });
+
+                // СЛУШАТЕЛЬ ЧЕКБОКСОВ ВЫХОДНЫХ (Для Vladimir и Max)
+                ['Vladimir', 'Max'].forEach(userName => {
+                    const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${userName}`);
+                    window.fbSDK.onValue(checkRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            localStorage.setItem(`weekend_checklist_${userName}`, JSON.stringify(data));
+                        }
+                        if (userName === currentUser) {
+                            loadSavedChecklistState();
+                            updateWeekendProgress();
+                        }
+                    });
+                });
+                
                 isFirebaseConnected = true;
                 const badge = document.getElementById('sync-status-badge');
                 badge.className = "text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/35";
@@ -2881,7 +2914,7 @@ function closeWeekendModal() {
             reader.readAsDataURL(file);
         }
 
-        function saveWeekendActivity() {
+      function saveWeekendActivity() {
             if (!backtestImage1 && !backtestImage2) {
                 const backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
                 const now = new Date();
@@ -2895,25 +2928,45 @@ function closeWeekendModal() {
             }
 
             const timestamp = Date.now();
-            let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
             
-            if (backtestImage1) {
-                backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 });
+            if (isFirebaseConnected && dbInstance) {
+                const backtestRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_backtests`);
+                
+                let promises = [];
+                if (backtestImage1) {
+                    const newEntry1 = { id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 };
+                    promises.push(window.fbSDK.push(backtestRef, newEntry1));
+                }
+                if (backtestImage2) {
+                    const newEntry2 = { id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 };
+                    promises.push(window.fbSDK.push(backtestRef, newEntry2));
+                }
+
+                Promise.all(promises).then(() => {
+                    backtestImage1 = null;
+                    backtestImage2 = null;
+                    updateWeekendProgress();
+                    renderBacktestStats();
+                    renderBacktestHistory();
+                    checkAndTransformBacktestSection();
+                }).catch(err => {
+                    console.error("Firebase backtest save error:", err);
+                    alert("Ошибка сохранения бэктестов в базу.");
+                });
+            } else {
+                // Запасной вариант для локального режима
+                let backtests = JSON.parse(localStorage.getItem('local_backtest_reports') || '[]');
+                if (backtestImage1) backtests.unshift({ id: timestamp, author: currentUser, date: formatDate(timestamp), image: backtestImage1 });
+                if (backtestImage2) backtests.unshift({ id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 });
+                localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
+
+                backtestImage1 = null;
+                backtestImage2 = null;
+                updateWeekendProgress();
+                renderBacktestStats();
+                renderBacktestHistory();
+                checkAndTransformBacktestSection();
             }
-            if (backtestImage2) {
-                backtests.unshift({ id: timestamp + 1, author: currentUser, date: formatDate(timestamp), image: backtestImage2 });
-            }
-
-            localStorage.setItem('local_backtest_reports', JSON.stringify(backtests));
-
-            // Очищаем временные переменные загрузки только ПОСЛЕ успешного сохранения в localStorage
-            backtestImage1 = null;
-            backtestImage2 = null;
-
-            updateWeekendProgress();
-            renderBacktestStats();
-            renderBacktestHistory();
-            checkAndTransformBacktestSection();
         }
 
       function renderBacktestStats() {
@@ -3206,10 +3259,17 @@ function closeWeekendModal() {
             const chk = document.getElementById(`chk-${num}`);
             const box = document.getElementById(`step-box-${num}`);
 
-            // Сохраняем состояние чекбокса
             let savedState = JSON.parse(localStorage.getItem(`weekend_checklist_${currentUser}`) || '{}');
             savedState[`chk_${num}`] = chk.checked;
             localStorage.setItem(`weekend_checklist_${currentUser}`, JSON.stringify(savedState));
+
+            // Синхронизация с Firebase в отдельный узел по имени пользователя
+            if (isFirebaseConnected && dbInstance) {
+                const checkRef = window.fbSDK.ref(dbInstance, `${DB_NODE_NAME}_checklist_${currentUser}`);
+                window.fbSDK.set(checkRef, savedState).catch(err => {
+                    console.error("Firebase checklist sync error:", err);
+                });
+            }
 
             if (chk.checked) {
                 box.classList.add('border-amber-400/60', 'bg-amber-500/10');
