@@ -378,15 +378,17 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-col sm:items-end space-y-2">
-                        <div id="session-remaining-text" class="text-xs text-gray-400 font-medium">
-                            осталось 3 ч 0 мин
-                        </div>
-                        <button onclick="openUnlockModal()" class="text-[11px] bg-brand-card hover:bg-gray-800 text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 flex items-center space-x-1.5 transition">
-                            <i class="fa-solid fa-lock-open"></i>
-                            <span>Досрочный ввод отчёта</span>
-                        </button>
-                    </div>
+                    <div class="flex items-center space-x-2">
+    <button onclick="openUnlockModal()" class="text-[11px] bg-brand-card hover:bg-gray-800 text-amber-400 hover:text-amber-300 px-3 py-1.5 rounded-lg border border-amber-500/30 flex items-center space-x-1.5 transition">
+        <i class="fa-solid fa-lock-open"></i>
+        <span>Досрочный ввод отчёта</span>
+    </button>
+
+    <!-- Кнопка ПС -->
+    <button id="btn-yesterday-report" onclick="openYesterdayReportForm()" class="hidden text-[11px] bg-brand-card hover:bg-gray-800 text-amber-400 hover:text-amber-300 w-[30px] h-[30px] rounded-lg border border-amber-500/30 font-bold items-center justify-center transition" title="Ввести отчёт за вчерашний день (доступно до 09:00)">
+        ПС
+    </button>
+</div>
                 </div>
 
                <!-- Рабочая область Активной Сессии -->
@@ -1065,6 +1067,7 @@ const DB_NODE_NAME = 'reports_vladimir';
 
         // Пароль для досрочного разблокирования формы во время сессии (можно изменить здесь)
         const SESSION_UNLOCK_PASSWORD = '1888';
+        let isYesterdayModeActive = false;
 
         let reportData = {
             trades: '',
@@ -1327,6 +1330,7 @@ const DB_NODE_NAME = 'reports_vladimir';
 
 // Торговая сессия, проверка завершённости дня и логика 1-дневного Блока
         function initSessionTimer() {
+            if (isYesterdayModeActive) return;
             const now = new Date();
             const dayOfWeek = now.getDay(); // 0 - ВС, 1 - ПН, ..., 5 - ПТ, 6 - СБ
             const hours = now.getHours();
@@ -1818,7 +1822,13 @@ const DB_NODE_NAME = 'reports_vladimir';
             if (now.getHours() < 9) {
                 sessionDate.setDate(sessionDate.getDate() - 1);
             }
-            const timestamp = sessionDate.getTime();
+            const timestamp = reportData.customSessionTimestamp || (() => {
+    let sessionDate = new Date(now);
+    if (now.getHours() < 9) {
+        sessionDate.setDate(sessionDate.getDate() - 1);
+    }
+    return sessionDate.getTime();
+})();
 
             const newEntry = {
                 id: timestamp,
@@ -1843,6 +1853,8 @@ const DB_NODE_NAME = 'reports_vladimir';
             } else {
                 saveLocally(newEntry);
             }
+            isYesterdayModeActive = false;
+reportData.customSessionTimestamp = null;
         }
 
         function saveLocally(entry) {
