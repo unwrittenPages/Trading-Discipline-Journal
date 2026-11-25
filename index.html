@@ -1844,56 +1844,57 @@ if (yesterdayBtn) {
         }
 
         function submitReport() {
-            if (!reportData.image) {
-                openScreenshotWarningModal();
-                return;
-            }
-
-            // Считываем необязательное уточнение
-            const commentInput = document.getElementById('report-comment-input');
-            const userComment = commentInput ? commentInput.value.trim() : '';
-
-            // Умная логика даты сессии: 
-            // Если отчёт отправляется рано утром (до 09:00), он относится к торговой сессии предыдущего дня.
-        
-            if (now.getHours() < 9) {
-                sessionDate.setDate(sessionDate.getDate() - 1);
-            }
-            const now = new Date();
-const timestamp = reportData.customSessionTimestamp || (() => {
-    const sessionDate = new Date(now);
-    if (now.getHours() < 9) {
-        sessionDate.setDate(sessionDate.getDate() - 1);
+    if (!reportData.image) {
+        openScreenshotWarningModal();
+        return;
     }
-    return sessionDate.getTime();
-})();
 
-            const newEntry = {
-                id: timestamp,
-                author: currentUser,
-                date: formatDate(timestamp),
-                trades: reportData.trades,
-                compliance: reportData.compliance,
-                error: reportData.error,
-                image: reportData.image,
-                comment: userComment, // Сохраняем комментарий
-                replies: [] // Массив для обсуждений
-            };
+    const commentInput = document.getElementById('report-comment-input');
+    const userComment = commentInput ? commentInput.value.trim() : '';
 
-            if (isFirebaseConnected && dbRef) {
-                window.fbSDK.push(dbRef, newEntry).then(() => {
-                    resetWizard();
-                    initSessionTimer(); 
-                }).catch(err => {
-                    console.error("Firebase push error:", err);
-                    saveLocally(newEntry);
-                });
-            } else {
-                saveLocally(newEntry);
-            }
-            isYesterdayModeActive = false;
-reportData.customSessionTimestamp = null;
+    const now = new Date();
+    const timestamp = reportData.customSessionTimestamp || (() => {
+        const sessionDate = new Date(now);
+        if (now.getHours() < 9) {
+            sessionDate.setDate(sessionDate.getDate() - 1);
         }
+        return sessionDate.getTime();
+    })();
+
+    const newEntry = {
+        id: timestamp,
+        author: currentUser,
+        date: formatDate(timestamp),
+        trades: reportData.trades,
+        compliance: reportData.compliance,
+        error: reportData.error,
+        image: reportData.image,
+        comment: userComment,
+        replies: []
+    };
+
+    const finishSubmit = () => {
+        isYesterdayModeActive = false;
+        reportData.customSessionTimestamp = null;
+        resetWizard();
+        initSessionTimer();
+    };
+
+    if (isFirebaseConnected && dbRef) {
+        window.fbSDK.push(dbRef, newEntry).then(() => {
+            finishSubmit();
+        }).catch(err => {
+            console.error("Firebase push error:", err);
+            saveLocally(newEntry);
+            isYesterdayModeActive = false;
+            reportData.customSessionTimestamp = null;
+        });
+    } else {
+        saveLocally(newEntry);
+        isYesterdayModeActive = false;
+        reportData.customSessionTimestamp = null;
+    }
+}
 
         function saveLocally(entry) {
             reportsHistory.unshift(entry);
