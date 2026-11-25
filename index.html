@@ -1855,8 +1855,7 @@ if (yesterdayBtn) {
 
             // Умная логика даты сессии: 
             // Если отчёт отправляется рано утром (до 09:00), он относится к торговой сессии предыдущего дня.
-            const now = new Date();
-            let sessionDate = new Date(now);
+        
             if (now.getHours() < 9) {
                 sessionDate.setDate(sessionDate.getDate() - 1);
             }
