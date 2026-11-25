@@ -1341,6 +1341,22 @@ const DB_NODE_NAME = 'reports_vladimir';
             const startSeconds = 9 * 3600;  // 09:00
             const endSeconds = 12 * 3600;   // 12:00
 
+            const yesterdayBtn = document.getElementById('btn-yesterday-report');
+const yesterdayCheckDate = new Date(now);
+yesterdayCheckDate.setDate(yesterdayCheckDate.getDate() - 1);
+const yesterdayDateStr = yesterdayCheckDate.toDateString();
+
+const hasYesterdayReport = reportsHistory.some(item => {
+    return new Date(item.id).toDateString() === yesterdayDateStr && item.author === currentUser;
+});
+
+if (yesterdayBtn) {
+    // Показываем кнопку «ПС» только утром до 09:00, если отчёт за прошлый день ещё не сдан
+    const showYesterdayBtn = (hours < 9) && !hasYesterdayReport;
+    yesterdayBtn.classList.toggle('hidden', !showYesterdayBtn);
+    yesterdayBtn.classList.toggle('flex', showYesterdayBtn);
+}
+
             // Форматирование даты
             const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
             const days = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
@@ -1611,6 +1627,28 @@ const DB_NODE_NAME = 'reports_vladimir';
             document.getElementById('unlock-password-input').focus();
         }
 
+        function openYesterdayReportForm() {
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    // Фиксируем время прошлой сессии в пределах вчерашнего дня (12:00), чтобы блок 1 день считался от вчерашнего дня
+    yesterday.setHours(12, 0, 0, 0);
+
+    isYesterdayModeActive = true;
+    reportData.customSessionTimestamp = yesterday.getTime();
+
+    const timerCard = document.getElementById('session-timer-card');
+    const completedCard = document.getElementById('completed-day-card');
+    const wizardContainer = document.getElementById('wizard-container');
+
+    if (timerCard) timerCard.classList.add('hidden');
+    if (completedCard) completedCard.classList.add('hidden');
+    if (wizardContainer) {
+        wizardContainer.classList.remove('hidden');
+        goToStep(1);
+    }
+}
+
         function closeNoticeModal() {
             const noticeModal = document.getElementById('notice-modal');
             if (noticeModal) noticeModal.classList.add('hidden');
@@ -1822,8 +1860,9 @@ const DB_NODE_NAME = 'reports_vladimir';
             if (now.getHours() < 9) {
                 sessionDate.setDate(sessionDate.getDate() - 1);
             }
-            const timestamp = reportData.customSessionTimestamp || (() => {
-    let sessionDate = new Date(now);
+            const now = new Date();
+const timestamp = reportData.customSessionTimestamp || (() => {
+    const sessionDate = new Date(now);
     if (now.getHours() < 9) {
         sessionDate.setDate(sessionDate.getDate() - 1);
     }
